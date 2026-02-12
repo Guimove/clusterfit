@@ -88,7 +88,7 @@ func runInspect(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		w = f
 	}
 
@@ -99,13 +99,13 @@ func runInspect(cmd *cobra.Command, args []string) error {
 	}
 
 	// Table output
-	fmt.Fprintf(w, "Cluster: %s (%s)\n", state.ClusterName, state.Region)
-	fmt.Fprintf(w, "Backend: %s\n", collector.BackendType())
-	fmt.Fprintf(w, "Workloads: %d | DaemonSets: %d\n\n", len(state.Workloads), len(state.DaemonSets))
+	_, _ = fmt.Fprintf(w, "Cluster: %s (%s)\n", state.ClusterName, state.Region)
+	_, _ = fmt.Fprintf(w, "Backend: %s\n", collector.BackendType())
+	_, _ = fmt.Fprintf(w, "Workloads: %d | DaemonSets: %d\n\n", len(state.Workloads), len(state.DaemonSets))
 
-	fmt.Fprintf(w, "%-30s %-15s %8s %10s %8s %10s %s\n",
+	_, _ = fmt.Fprintf(w, "%-30s %-15s %8s %10s %8s %10s %s\n",
 		"POD", "NAMESPACE", "CPU(m)", "MEM(MiB)", "REQ_CPU", "REQ_MEM", "FLAGS")
-	fmt.Fprintf(w, "%s\n", strings.Repeat("-", 100))
+	_, _ = fmt.Fprintf(w, "%s\n", strings.Repeat("-", 100))
 
 	for _, wp := range state.Workloads {
 		flags := ""
@@ -116,7 +116,7 @@ func runInspect(cmd *cobra.Command, args []string) error {
 			flags += "[ds]"
 		}
 
-		fmt.Fprintf(w, "%-30s %-15s %8d %10d %8d %10d %s\n",
+		_, _ = fmt.Fprintf(w, "%-30s %-15s %8d %10d %8d %10d %s\n",
 			truncate(wp.Name, 30),
 			truncate(wp.Namespace, 15),
 			wp.EffectiveCPUMillis,
@@ -127,7 +127,7 @@ func runInspect(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	fmt.Fprintf(w, "\nTotal effective: CPU=%dm MEM=%dMiB\n",
+	_, _ = fmt.Fprintf(w, "\nTotal effective: CPU=%dm MEM=%dMiB\n",
 		state.TotalEffectiveCPU(), state.TotalEffectiveMemory()/(1024*1024))
 
 	return nil

@@ -30,7 +30,7 @@ func (b *BestFitDecreasing) Pack(ctx context.Context, input PackInput) (*PackRes
 	}
 
 	// Pre-compute DaemonSet overhead (applied to every node)
-	dsOverhead := daemonSetOverhead(input.DaemonSets)
+	dsOverhead := model.SumEffectiveResources(input.DaemonSets)
 
 	// Sort workloads by dominance score (largest first)
 	workloads := make([]model.WorkloadProfile, len(input.Workloads))
@@ -115,16 +115,6 @@ func (b *BestFitDecreasing) Pack(ctx context.Context, input PackInput) (*PackRes
 		Nodes:             allocations,
 		UnschedulablePods: unschedulable,
 	}, nil
-}
-
-// daemonSetOverhead computes the total resources consumed by DaemonSets per node.
-func daemonSetOverhead(daemons []model.WorkloadProfile) model.ResourceQuantity {
-	var total model.ResourceQuantity
-	for i := range daemons {
-		total.CPUMillis += daemons[i].EffectiveCPUMillis
-		total.MemoryBytes += daemons[i].EffectiveMemoryBytes
-	}
-	return total
 }
 
 // sortByDominance sorts workloads so the most demanding pods come first.

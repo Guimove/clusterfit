@@ -38,7 +38,7 @@ func (o *Orchestrator) Recommend(ctx context.Context) ([]model.Recommendation, e
 	cfg := o.Config
 
 	// Step 1: Collect metrics
-	fmt.Fprintf(o.Writer, "Collecting metrics from %s backend...\n", o.Collector.BackendType())
+	_, _ = fmt.Fprintf(o.Writer, "Collecting metrics from %s backend...\n", o.Collector.BackendType())
 
 	now := time.Now()
 	opts := metrics.CollectOptions{
@@ -64,11 +64,11 @@ func (o *Orchestrator) Recommend(ctx context.Context) ([]model.Recommendation, e
 		MemoryBytes: cfg.Simulation.SystemReserved.MemoryMiB * 1024 * 1024,
 	}
 
-	fmt.Fprintf(o.Writer, "Found %d workloads and %d DaemonSets\n",
+	_, _ = fmt.Fprintf(o.Writer, "Found %d workloads and %d DaemonSets\n",
 		state.WorkloadCount(), len(state.DaemonSets))
 
 	// Step 2: Fetch instance types
-	fmt.Fprintf(o.Writer, "Fetching EC2 instance types for %s...\n", cfg.Cluster.Region)
+	_, _ = fmt.Fprintf(o.Writer, "Fetching EC2 instance types for %s...\n", cfg.Cluster.Region)
 
 	archs := make([]model.Architecture, len(cfg.Instances.Architectures))
 	for i, a := range cfg.Instances.Architectures {
@@ -90,13 +90,13 @@ func (o *Orchestrator) Recommend(ctx context.Context) ([]model.Recommendation, e
 		return nil, fmt.Errorf("fetching instance types: %w", err)
 	}
 
-	fmt.Fprintf(o.Writer, "Evaluating %d instance types across %d scenarios...\n",
+	_, _ = fmt.Fprintf(o.Writer, "Evaluating %d instance types across %d scenarios...\n",
 		len(templates), 0) // Will be updated below
 
 	// Step 3: Generate and run simulations
 	scenarios := simulation.GenerateScenarios(templates, cfg.Simulation.Strategy, cfg.Simulation.SpotRatio)
 
-	fmt.Fprintf(o.Writer, "Running %d simulation scenarios...\n", len(scenarios))
+	_, _ = fmt.Fprintf(o.Writer, "Running %d simulation scenarios...\n", len(scenarios))
 
 	weights := model.ScoringWeights{
 		Cost:          cfg.Scoring.Weights.Cost,

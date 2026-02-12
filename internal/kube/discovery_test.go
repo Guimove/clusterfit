@@ -31,7 +31,7 @@ func tcpPort(name string, port int32) corev1.ServicePort {
 }
 
 func TestDiscoverThanos(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		svc("thanos-query", "monitoring", map[string]string{
 			"app.kubernetes.io/component": "query",
 			"app.kubernetes.io/name":      "thanos",
@@ -54,7 +54,7 @@ func TestDiscoverThanos(t *testing.T) {
 }
 
 func TestDiscoverThanosSimpleLabel(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		svc("thanos-querier", "observability", map[string]string{
 			"app": "thanos-querier",
 		}, []corev1.ServicePort{tcpPort("http", 10902)}),
@@ -76,7 +76,7 @@ func TestDiscoverThanosSimpleLabel(t *testing.T) {
 }
 
 func TestDiscoverPrometheus(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		svc("prometheus-server", "monitoring", map[string]string{
 			"app": "prometheus-server",
 		}, []corev1.ServicePort{tcpPort("http", 9090)}),
@@ -95,7 +95,7 @@ func TestDiscoverPrometheus(t *testing.T) {
 }
 
 func TestDiscoverPrometheusKubeStack(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		svc("kube-prometheus-stack-prometheus", "monitoring", map[string]string{
 			"app": "kube-prometheus-stack-prometheus",
 		}, []corev1.ServicePort{tcpPort("web", 9090)}),
@@ -111,7 +111,7 @@ func TestDiscoverPrometheusKubeStack(t *testing.T) {
 }
 
 func TestDiscoverVictoriaMetrics(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		svc("vmsingle", "vm", map[string]string{
 			"app.kubernetes.io/name": "vmsingle",
 		}, []corev1.ServicePort{tcpPort("http", 8428)}),
@@ -133,7 +133,7 @@ func TestDiscoverVictoriaMetrics(t *testing.T) {
 }
 
 func TestDiscoverMimir(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		svc("mimir-query-frontend", "mimir", map[string]string{
 			"app.kubernetes.io/name":      "mimir",
 			"app.kubernetes.io/component": "query-frontend",
@@ -150,7 +150,7 @@ func TestDiscoverMimir(t *testing.T) {
 }
 
 func TestDiscoverCortex(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		svc("cortex-query-frontend", "cortex", map[string]string{
 			"app.kubernetes.io/name":      "cortex",
 			"app.kubernetes.io/component": "query-frontend",
@@ -167,7 +167,7 @@ func TestDiscoverCortex(t *testing.T) {
 }
 
 func TestDiscoverNamespaceFilter(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		svc("prometheus-server", "team-a", map[string]string{
 			"app": "prometheus-server",
 		}, []corev1.ServicePort{tcpPort("http", 9090)}),
@@ -186,7 +186,7 @@ func TestDiscoverNamespaceFilter(t *testing.T) {
 }
 
 func TestDiscoverNotFound(t *testing.T) {
-	client := fake.NewSimpleClientset()
+	client := fake.NewSimpleClientset() //nolint:staticcheck // NewClientset requires generated apply configs
 
 	_, err := Discover(context.Background(), client, DiscoveryOptions{})
 	if err == nil {
@@ -196,7 +196,7 @@ func TestDiscoverNotFound(t *testing.T) {
 
 func TestDiscoverPriorityOrder(t *testing.T) {
 	// Both Thanos and Prometheus exist; Thanos should win.
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		svc("thanos-query", "monitoring", map[string]string{
 			"app": "thanos-query",
 		}, []corev1.ServicePort{tcpPort("http", 10902)}),

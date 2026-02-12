@@ -10,7 +10,7 @@ import (
 )
 
 func TestFindPodForService(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "thanos-query",
@@ -41,7 +41,7 @@ func TestFindPodForService(t *testing.T) {
 }
 
 func TestFindPodForServiceNoPods(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "thanos-query",
@@ -61,7 +61,7 @@ func TestFindPodForServiceNoPods(t *testing.T) {
 }
 
 func TestFindPodForServiceNoSelector(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "external-svc",
@@ -80,7 +80,7 @@ func TestFindPodForServiceNoSelector(t *testing.T) {
 }
 
 func TestFindPodForServiceSkipsPending(t *testing.T) {
-	client := fake.NewSimpleClientset(
+	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
 		&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "prometheus",

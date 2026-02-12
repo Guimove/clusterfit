@@ -14,28 +14,30 @@ type TableReporter struct {
 	w io.Writer
 }
 
-func (r *TableReporter) Report(ctx context.Context, recs []model.Recommendation, meta ReportMeta) error {
+func (r *TableReporter) Report(_ context.Context, recs []model.Recommendation, meta ReportMeta) error {
+	ew := &errWriter{w: r.w}
+
 	// Header
-	fmt.Fprintf(r.w, "\n")
-	fmt.Fprintf(r.w, "ClusterFit Recommendations\n")
-	fmt.Fprintf(r.w, "%s\n", strings.Repeat("=", 60))
-	fmt.Fprintf(r.w, "Cluster:     %s\n", meta.ClusterName)
-	fmt.Fprintf(r.w, "Region:      %s\n", meta.Region)
-	fmt.Fprintf(r.w, "Pods:        %d (+ %d DaemonSets)\n", meta.TotalPods, meta.TotalDaemons)
-	fmt.Fprintf(r.w, "Percentile:  p%g\n", meta.Percentile*100)
-	fmt.Fprintf(r.w, "Window:      %s to %s\n",
+	ew.printf("\n")
+	ew.printf("ClusterFit Recommendations\n")
+	ew.printf("%s\n", strings.Repeat("=", 60))
+	ew.printf("Cluster:     %s\n", meta.ClusterName)
+	ew.printf("Region:      %s\n", meta.Region)
+	ew.printf("Pods:        %d (+ %d DaemonSets)\n", meta.TotalPods, meta.TotalDaemons)
+	ew.printf("Percentile:  p%g\n", meta.Percentile*100)
+	ew.printf("Window:      %s to %s\n",
 		meta.WindowStart.Format("2006-01-02"), meta.WindowEnd.Format("2006-01-02"))
-	fmt.Fprintf(r.w, "%s\n\n", strings.Repeat("=", 60))
+	ew.printf("%s\n\n", strings.Repeat("=", 60))
 
 	if len(recs) == 0 {
-		fmt.Fprintf(r.w, "No recommendations available.\n")
-		return nil
+		ew.printf("No recommendations available.\n")
+		return ew.err
 	}
 
 	// Column headers
-	fmt.Fprintf(r.w, "%-4s %-30s %6s %7s %7s %6s %8s %s\n",
+	ew.printf("%-4s %-30s %6s %7s %7s %6s %8s %s\n",
 		"Rank", "Configuration", "Nodes", "CPU%%", "Mem%%", "Score", "$/month", "Notes")
-	fmt.Fprintf(r.w, "%s\n", strings.Repeat("-", 100))
+	ew.printf("%s\n", strings.Repeat("-", 100))
 
 	for _, rec := range recs {
 		sr := rec.SimulationResult
@@ -54,7 +56,7 @@ func (r *TableReporter) Report(ctx context.Context, recs []model.Recommendation,
 			notes += fmt.Sprintf(" [%d unschedulable]", len(sr.UnschedulablePods))
 		}
 
-		fmt.Fprintf(r.w, "#%-3d %-30s %6d %6.1f%% %6.1f%% %6.1f %8.0f %s\n",
+		ew.printf("#%-3d %-30s %6d %6.1f%% %6.1f%% %6.1f %8.0f %s\n",
 			rec.Rank,
 			label,
 			sr.TotalNodes,
@@ -66,29 +68,29 @@ func (r *TableReporter) Report(ctx context.Context, recs []model.Recommendation,
 		)
 	}
 
-	fmt.Fprintf(r.w, "%s\n", strings.Repeat("-", 100))
+	ew.printf("%s\n", strings.Repeat("-", 100))
 
 	// Top recommendation detail
 	top := recs[0]
 	topSR := top.SimulationResult
-	fmt.Fprintf(r.w, "\nRecommended: %s\n", topSR.InstanceConfig.Label())
-	fmt.Fprintf(r.w, "  Nodes:          %d\n", topSR.TotalNodes)
-	fmt.Fprintf(r.w, "  Monthly cost:   $%.0f\n", top.MonthlyCost)
-	fmt.Fprintf(r.w, "  CPU util:       %.1f%%\n", topSR.AvgCPUUtilization*100)
-	fmt.Fprintf(r.w, "  Memory util:    %.1f%%\n", topSR.AvgMemUtilization*100)
-	fmt.Fprintf(r.w, "  Balance score:  %.2f\n", topSR.Fragmentation.ResourceBalanceScore)
+	ew.printf("\nRecommended: %s\n", topSR.InstanceConfig.Label())
+	ew.printf("  Nodes:          %d\n", topSR.TotalNodes)
+	ew.printf("  Monthly cost:   $%.0f\n", top.MonthlyCost)
+	ew.printf("  CPU util:       %.1f%%\n", topSR.AvgCPUUtilization*100)
+	ew.printf("  Memory util:    %.1f%%\n", topSR.AvgMemUtilization*100)
+	ew.printf("  Balance score:  %.2f\n", topSR.Fragmentation.ResourceBalanceScore)
 
 	if top.AnnualSavings > 0 {
-		fmt.Fprintf(r.w, "  Annual savings: $%.0f\n", top.AnnualSavings)
+		ew.printf("  Annual savings: $%.0f\n", top.AnnualSavings)
 	}
 
 	if len(top.Warnings) > 0 {
-		fmt.Fprintf(r.w, "\n  Warnings:\n")
+		ew.printf("\n  Warnings:\n")
 		for _, w := range top.Warnings {
-			fmt.Fprintf(r.w, "    - %s\n", w)
+			ew.printf("    - %s\n", w)
 		}
 	}
 
-	fmt.Fprintf(r.w, "\n")
-	return nil
+	ew.printf("\n")
+	return ew.err
 }

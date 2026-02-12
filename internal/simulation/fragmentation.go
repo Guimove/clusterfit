@@ -6,6 +6,22 @@ import (
 	"github.com/guimove/clusterfit/internal/model"
 )
 
+const (
+	// HighUtilThreshold is the utilization level above which a resource dimension
+	// is considered nearly full (used for stranded-resource detection and warnings).
+	HighUtilThreshold = 0.85
+
+	// LowUtilThreshold is the utilization level below which a resource dimension
+	// is considered underutilized.
+	LowUtilThreshold = 0.50
+
+	// CriticalMemUtilThreshold triggers a memory OOM-risk warning.
+	CriticalMemUtilThreshold = 0.90
+
+	// HighSpotRatio is the spot fraction above which an interruption-risk warning fires.
+	HighSpotRatio = 0.50
+)
+
 // AnalyzeFragmentation computes fragmentation metrics for a set of node allocations.
 func AnalyzeFragmentation(nodes []model.NodeAllocation) model.FragmentationReport {
 	if len(nodes) == 0 {
@@ -25,16 +41,16 @@ func AnalyzeFragmentation(nodes []model.NodeAllocation) model.FragmentationRepor
 		cpuUtil := float64(n.UsedCPU) / float64(alloc.CPUMillis)
 		memUtil := float64(n.UsedMem) / float64(alloc.MemoryBytes)
 
-		// Stranded resources: one dimension nearly full (>85%), other underused (<50%)
-		if cpuUtil > 0.85 && memUtil < 0.50 {
+		// Stranded resources: one dimension nearly full, other underused
+		if cpuUtil > HighUtilThreshold && memUtil < LowUtilThreshold {
 			report.StrandedMemoryBytes += alloc.MemoryBytes - n.UsedMem
 		}
-		if memUtil > 0.85 && cpuUtil < 0.50 {
+		if memUtil > HighUtilThreshold && cpuUtil < LowUtilThreshold {
 			report.StrandedCPUMillis += alloc.CPUMillis - n.UsedCPU
 		}
 
-		// Under-utilized: either dimension below 50%
-		if cpuUtil < 0.50 || memUtil < 0.50 {
+		// Under-utilized: either dimension below threshold
+		if cpuUtil < LowUtilThreshold || memUtil < LowUtilThreshold {
 			underutilized++
 		}
 

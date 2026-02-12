@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"net/http"
 	"strings"
 	"time"
 
@@ -13,6 +12,20 @@ import (
 	prommodel "github.com/prometheus/common/model"
 
 	"github.com/guimove/clusterfit/internal/model"
+)
+
+const (
+	// pingTimeout is the timeout for the initial connectivity check.
+	pingTimeout = 10 * time.Second
+
+	// defaultStep is the PromQL step interval when none is configured.
+	defaultStep = "5m"
+
+	// minEffectiveCPUMillis is the floor for workload CPU sizing (prevents zero-sized pods).
+	minEffectiveCPUMillis = 10
+
+	// minEffectiveMemoryBytes is the floor for workload memory sizing.
+	minEffectiveMemoryBytes = 64 * 1024 * 1024 // 64 MiB
 )
 
 // PrometheusCollector collects metrics from Prometheus, Thanos, or Cortex.
@@ -56,7 +69,7 @@ func NewPrometheusCollector(endpoint string, opts ...PrometheusOption) (*Prometh
 
 // Ping checks connectivity and detects the backend type.
 func (c *PrometheusCollector) Ping(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, pingTimeout)
 	defer cancel()
 
 	// Try a simple query to check connectivity
@@ -75,14 +88,8 @@ func (c *PrometheusCollector) BackendType() string {
 	return c.backend
 }
 
-// detectBackend tries to identify Thanos or Cortex.
+// detectBackend tries to identify Thanos or Cortex via backend-specific metrics.
 func (c *PrometheusCollector) detectBackend(ctx context.Context) {
-	// Check buildinfo for Thanos/Cortex
-	resp, err := http.Get(c.endpoint + "/api/v1/status/buildinfo")
-	if err == nil {
-		_ = resp.Body.Close()
-	}
-
 	// Try Thanos-specific metric
 	result, _, err := c.api.Query(ctx, "thanos_store_nodes_total", time.Now())
 	if err == nil && result != nil && result.String() != "" {
@@ -102,7 +109,7 @@ func (c *PrometheusCollector) Collect(ctx context.Context, opts CollectOptions) 
 	windowStr := formatDuration(opts.Window.Duration())
 	stepStr := formatDuration(opts.StepInterval)
 	if stepStr == "" {
-		stepStr = "5m"
+		stepStr = defaultStep
 	}
 
 	// Collect all metrics in parallel
@@ -249,12 +256,12 @@ func (c *PrometheusCollector) buildClusterState(
 			wp.EffectiveMemoryBytes = wp.Requested.MemoryBytes
 		}
 
-		// Minimum effective values (10m CPU, 64MiB memory)
-		if wp.EffectiveCPUMillis < 10 {
-			wp.EffectiveCPUMillis = 10
+		// Minimum effective values to prevent zero-sized pods
+		if wp.EffectiveCPUMillis < minEffectiveCPUMillis {
+			wp.EffectiveCPUMillis = minEffectiveCPUMillis
 		}
-		if wp.EffectiveMemoryBytes < 64*1024*1024 {
-			wp.EffectiveMemoryBytes = 64 * 1024 * 1024
+		if wp.EffectiveMemoryBytes < minEffectiveMemoryBytes {
+			wp.EffectiveMemoryBytes = minEffectiveMemoryBytes
 		}
 
 		// Check owner info for DaemonSet

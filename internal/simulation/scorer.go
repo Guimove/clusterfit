@@ -144,21 +144,21 @@ func generateWarnings(r model.SimulationResult) []string {
 			fmt.Sprintf("%d pods could not be scheduled", len(r.UnschedulablePods)))
 	}
 
-	if r.AvgCPUUtilization > 0.85 {
+	if r.AvgCPUUtilization > HighUtilThreshold {
 		warnings = append(warnings, "High CPU utilization leaves little headroom for bursts")
 	}
-	if r.AvgMemUtilization > 0.90 {
+	if r.AvgMemUtilization > CriticalMemUtilThreshold {
 		warnings = append(warnings, "High memory utilization risks OOM under load spikes")
 	}
 
-	if r.Fragmentation.UnderutilizedNodeFraction > 0.5 {
+	if r.Fragmentation.UnderutilizedNodeFraction > LowUtilThreshold {
 		warnings = append(warnings,
-			fmt.Sprintf("%.0f%% of nodes are underutilized (<50%% on one dimension)",
-				r.Fragmentation.UnderutilizedNodeFraction*100))
+			fmt.Sprintf("%.0f%% of nodes are underutilized (<%d%% on one dimension)",
+				r.Fragmentation.UnderutilizedNodeFraction*100, int(LowUtilThreshold*100)))
 	}
 
 	// Spot warnings
-	if r.InstanceConfig.SpotRatio > 0.5 {
+	if r.InstanceConfig.SpotRatio > HighSpotRatio {
 		warnings = append(warnings, "High spot ratio increases interruption risk")
 	}
 

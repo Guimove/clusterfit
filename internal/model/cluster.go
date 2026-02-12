@@ -63,10 +63,15 @@ func (cs ClusterState) WorkloadCount() int {
 
 // DaemonSetOverhead returns the total resources consumed by DaemonSets per node.
 func (cs ClusterState) DaemonSetOverhead() ResourceQuantity {
+	return SumEffectiveResources(cs.DaemonSets)
+}
+
+// SumEffectiveResources returns the total effective CPU and memory across a slice of workloads.
+func SumEffectiveResources(wps []WorkloadProfile) ResourceQuantity {
 	var total ResourceQuantity
-	for i := range cs.DaemonSets {
-		total.CPUMillis += cs.DaemonSets[i].EffectiveCPUMillis
-		total.MemoryBytes += cs.DaemonSets[i].EffectiveMemoryBytes
+	for i := range wps {
+		total.CPUMillis += wps[i].EffectiveCPUMillis
+		total.MemoryBytes += wps[i].EffectiveMemoryBytes
 	}
 	return total
 }

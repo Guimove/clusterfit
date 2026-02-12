@@ -14,6 +14,14 @@ import (
 	"github.com/guimove/clusterfit/internal/model"
 )
 
+const (
+	// defaultMaxPods is the Kubernetes default pod limit per node.
+	defaultMaxPods int32 = 110
+
+	// eksMaxPods is the EKS hard cap on pods per node.
+	eksMaxPods int32 = 250
+)
+
 // GetInstanceTypes retrieves EC2 instance types matching the filter.
 func (p *AWSProvider) GetInstanceTypes(ctx context.Context, filter InstanceFilter) ([]model.NodeTemplate, error) {
 	var filters []ec2types.Filter
@@ -159,11 +167,11 @@ func convertInstanceType(it ec2types.InstanceTypeInfo, region string) model.Node
 // ComputeMaxPods calculates the maximum pods for an instance using the EKS standard formula.
 func ComputeMaxPods(maxENIs, ipv4PerENI int32) int32 {
 	if maxENIs == 0 || ipv4PerENI == 0 {
-		return 110 // Kubernetes default
+		return defaultMaxPods
 	}
 	maxPods := (maxENIs * ipv4PerENI) - 1
-	if maxPods > 250 {
-		maxPods = 250
+	if maxPods > eksMaxPods {
+		maxPods = eksMaxPods
 	}
 	if maxPods < 1 {
 		maxPods = 1

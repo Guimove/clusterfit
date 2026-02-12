@@ -75,6 +75,13 @@ func (o *Orchestrator) Recommend(ctx context.Context) ([]model.Recommendation, e
 	if autoClassified {
 		workloadClass, gibPerVCPU = state.ClassifyWorkloads()
 		cfg.Instances.Families = model.FamiliesForClass(workloadClass, "intel")
+		// Always include general-purpose as a fallback when auto-classifying
+		// to an extreme (C or R). Per-pod requests may skew the bin-packing
+		// ratio away from the aggregate classification, and M-series provides
+		// a safe middle ground that the scorer can evaluate.
+		if workloadClass != model.WorkloadClassGeneral {
+			cfg.Instances.Families = append(cfg.Instances.Families, model.FamiliesForClass(model.WorkloadClassGeneral, "intel")...)
+		}
 		_, _ = fmt.Fprintf(o.Writer, "Workload profile: %s (%.1f GiB/vCPU) → families %v\n",
 			workloadClass, gibPerVCPU, cfg.Instances.Families)
 	}
@@ -104,9 +111,15 @@ func (o *Orchestrator) Recommend(ctx context.Context) ([]model.Recommendation, e
 			families []string
 			arch     model.Architecture
 		}
+		gravitonFamilies := model.FamiliesForClass(workloadClass, "graviton")
+		amdFamilies := model.FamiliesForClass(workloadClass, "amd")
+		if workloadClass != model.WorkloadClassGeneral {
+			gravitonFamilies = append(gravitonFamilies, model.FamiliesForClass(model.WorkloadClassGeneral, "graviton")...)
+			amdFamilies = append(amdFamilies, model.FamiliesForClass(model.WorkloadClassGeneral, "amd")...)
+		}
 		altDefs := []altDef{
-			{"arm64 (Graviton)", model.FamiliesForClass(workloadClass, "graviton"), model.ArchARM64},
-			{"amd64 (AMD)", model.FamiliesForClass(workloadClass, "amd"), model.ArchAMD64},
+			{"arm64 (Graviton)", gravitonFamilies, model.ArchARM64},
+			{"amd64 (AMD)", amdFamilies, model.ArchAMD64},
 		}
 
 		for _, ad := range altDefs {

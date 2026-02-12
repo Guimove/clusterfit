@@ -88,8 +88,8 @@ func runPricing(cmd *cobra.Command, args []string) error {
 		args2 = append(args2, "$/HOUR(SP)")
 	}
 	header += "\n"
-	fmt.Fprintf(os.Stdout, header, args2...)
-	fmt.Fprintf(os.Stdout, "%s\n", strings.Repeat("-", 80))
+	_, _ = fmt.Fprintf(os.Stdout, header, args2...)
+	_, _ = fmt.Fprintf(os.Stdout, "%s\n", strings.Repeat("-", 80))
 
 	for _, t := range templates {
 		row := fmt.Sprintf("%-20s %5d %8.1f %7d %6s %10.4f",
@@ -110,7 +110,7 @@ func runPricing(cmd *cobra.Command, args []string) error {
 		fmt.Println(row)
 	}
 
-	fmt.Fprintf(os.Stdout, "\n%d instance types in %s\n", len(templates), cfg.Cluster.Region)
+	_, _ = fmt.Fprintf(os.Stdout, "\n%d instance types in %s\n", len(templates), cfg.Cluster.Region)
 	return nil
 }
 

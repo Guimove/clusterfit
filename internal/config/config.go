@@ -57,6 +57,7 @@ type SimulationConfig struct {
 	SpotRatio      float64            `yaml:"spot_ratio"`
 	SystemReserved SystemReservedConf `yaml:"system_reserved"`
 	MaxNodes       int                `yaml:"max_nodes"`
+	MinNodes       int                `yaml:"min_nodes"`
 }
 
 type SystemReservedConf struct {
@@ -100,7 +101,7 @@ func Default() Config {
 			},
 		},
 		Instances: InstancesConfig{
-			Families:              []string{"m5", "m6i", "m7i", "c5", "c6i", "r5", "r6i"},
+			Families:              nil, // auto-selected from workload classification when empty
 			Architectures:         []string{"amd64"},
 			ExcludeBurstable:      true,
 			ExcludeBareMetal:      true,
@@ -116,6 +117,7 @@ func Default() Config {
 				MemoryMiB: 256,
 			},
 			MaxNodes: 500,
+			MinNodes: 3,
 		},
 		Scoring: ScoringConfig{
 			Weights: ScoringWeightsConf{
@@ -142,6 +144,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Simulation.SpotRatio < 0 || c.Simulation.SpotRatio > 1.0 {
 		return fmt.Errorf("spot_ratio must be between 0 and 1.0, got %v", c.Simulation.SpotRatio)
+	}
+	if c.Simulation.MinNodes < 0 {
+		return fmt.Errorf("min_nodes must be non-negative, got %d", c.Simulation.MinNodes)
 	}
 	validStrats := map[string]bool{"homogeneous": true, "mixed": true, "both": true}
 	if !validStrats[c.Simulation.Strategy] {

@@ -23,8 +23,18 @@ func (r *MarkdownReporter) Report(_ context.Context, recs []model.Recommendation
 	ew.printf("| Region | %s |\n", meta.Region)
 	ew.printf("| Pods | %d (+ %d DaemonSets) |\n", meta.TotalPods, meta.TotalDaemons)
 	ew.printf("| Percentile | p%.0f |\n", meta.Percentile*100)
-	ew.printf("| Window | %s to %s |\n\n",
+	ew.printf("| Window | %s to %s |\n",
 		meta.WindowStart.Format("2006-01-02"), meta.WindowEnd.Format("2006-01-02"))
+	if meta.AggregateMetrics != nil {
+		am := meta.AggregateMetrics
+		memGiB := am.P95MemoryBytes / (1024 * 1024 * 1024)
+		ew.printf("| Cluster P95 | %.1f vCPU, %.1f GiB |\n", am.P95CPUCores, memGiB)
+		ew.printf("| Node range | %d → %d (observed) |\n", am.MinNodeCount, am.MaxNodeCount)
+	}
+	if meta.MinNodes > 0 {
+		ew.printf("| Min nodes | %d (HA constraint) |\n", meta.MinNodes)
+	}
+	ew.printf("\n")
 
 	if len(recs) == 0 {
 		ew.printf("No recommendations available.\n")
@@ -71,6 +81,29 @@ func (r *MarkdownReporter) Report(_ context.Context, recs []model.Recommendation
 		ew.printf("\n### Warnings\n\n")
 		for _, w := range top.Warnings {
 			ew.printf("- %s\n", w)
+		}
+	}
+
+	// Workload classification and architecture alternatives
+	if meta.WorkloadClass != "" {
+		ew.printf("\n## Workload Profile\n\n")
+		ew.printf("**%s** (%.1f GiB/vCPU)\n", meta.WorkloadClass, meta.GiBPerVCPU)
+	}
+
+	if len(meta.Alternatives) > 0 {
+		ew.printf("\n## Architecture Alternatives\n\n")
+		ew.printf("| Architecture | Configuration | Nodes | $/month | vs Primary |\n")
+		ew.printf("|-------------|--------------|-------|---------|------------|\n")
+		for _, alt := range meta.Alternatives {
+			sr := alt.TopPick.SimulationResult
+			savingsStr := "—"
+			if alt.Savings > 0 {
+				savingsStr = fmt.Sprintf("%.0f%% cheaper", alt.Savings)
+			} else if alt.Savings < 0 {
+				savingsStr = fmt.Sprintf("%.0f%% more expensive", -alt.Savings)
+			}
+			ew.printf("| %s | %s x %d | %d | $%.0f | %s |\n",
+				alt.Architecture, sr.InstanceConfig.Label(), sr.TotalNodes, sr.TotalNodes, alt.TopPick.MonthlyCost, savingsStr)
 		}
 	}
 

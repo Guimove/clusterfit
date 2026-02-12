@@ -70,8 +70,8 @@ func runPricing(cmd *cobra.Command, args []string) error {
 	}
 
 	// Enrich with pricing
-	if err := provider.EnrichWithPricing(ctx, templates); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: could not fetch all pricing data: %v\n", err)
+	if _, err := provider.EnrichWithPricing(ctx, templates); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Warning: could not fetch all pricing data: %v\n", err)
 	}
 
 	// Sort

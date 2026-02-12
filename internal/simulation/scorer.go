@@ -10,7 +10,9 @@ import (
 
 // Scorer computes composite scores for simulation results and ranks them.
 type Scorer struct {
-	Weights model.ScoringWeights
+	Weights          model.ScoringWeights
+	DaemonSetCount   int                            // number of DaemonSets (affects node count preference)
+	AggregateMetrics *model.ClusterAggregateMetrics // cluster-wide metrics for scaling efficiency scoring
 }
 
 // NewScorer creates a scorer with the given weights.
@@ -86,23 +88,45 @@ func (s *Scorer) score(
 		(1.0 - r.Fragmentation.UnderutilizedNodeFraction)
 
 	// Resilience score: penalize too few nodes (single point of failure)
-	// and too many nodes (management overhead)
+	// and too many nodes (management overhead, DaemonSet waste per AWS best practices).
+	// "Fewer, larger instances are better, especially with many DaemonSets."
 	switch {
 	case r.TotalNodes <= 1:
 		rec.ResilienceScore = 20
-	case r.TotalNodes <= 3:
-		rec.ResilienceScore = 60
-	case r.TotalNodes <= 50:
+	case r.TotalNodes <= 2:
+		rec.ResilienceScore = 50
+	case r.TotalNodes <= 5:
+		rec.ResilienceScore = 90
+	case r.TotalNodes <= 15:
 		rec.ResilienceScore = 100
-	case r.TotalNodes <= 200:
-		rec.ResilienceScore = 80
+	case r.TotalNodes <= 30:
+		rec.ResilienceScore = 85
+	case r.TotalNodes <= 50:
+		rec.ResilienceScore = 70
+	case r.TotalNodes <= 100:
+		rec.ResilienceScore = 55
 	default:
-		rec.ResilienceScore = 60
+		rec.ResilienceScore = 40
+	}
+
+	// Penalize high DaemonSet overhead: each DS runs on every node,
+	// so more nodes = more wasted resources on DS replicas
+	if s.DaemonSetCount > 0 && r.TotalNodes > 5 {
+		dsOverheadRatio := float64(s.DaemonSetCount) * float64(r.TotalNodes) / 100.0
+		dsPenalty := math.Min(dsOverheadRatio*5, 20) // up to -20 points
+		rec.ResilienceScore = math.Max(0, rec.ResilienceScore-dsPenalty)
 	}
 
 	// Penalize unschedulable pods
 	if len(r.UnschedulablePods) > 0 {
 		penalty := math.Min(float64(len(r.UnschedulablePods))*10, 50)
+		rec.ResilienceScore = math.Max(0, rec.ResilienceScore-penalty)
+	}
+
+	// Penalize poor trough utilization when scaling data is available
+	if r.ScalingEfficiency != nil && r.ScalingEfficiency.EstTroughCPUUtil < 0.30 {
+		// Scale penalty: 0% trough → -25 points, 30% trough → 0 points
+		penalty := (0.30 - r.ScalingEfficiency.EstTroughCPUUtil) / 0.30 * 25
 		rec.ResilienceScore = math.Max(0, rec.ResilienceScore-penalty)
 	}
 
@@ -155,6 +179,15 @@ func generateWarnings(r model.SimulationResult) []string {
 		warnings = append(warnings,
 			fmt.Sprintf("%.0f%% of nodes are underutilized (<%d%% on one dimension)",
 				r.Fragmentation.UnderutilizedNodeFraction*100, int(LowUtilThreshold*100)))
+	}
+
+	// Scaling efficiency warning
+	if r.ScalingEfficiency != nil && r.ScalingEfficiency.EstTroughCPUUtil < 0.30 {
+		warnings = append(warnings,
+			fmt.Sprintf("Low trough utilization (%.0f%% CPU) when cluster scales %d→%d nodes",
+				r.ScalingEfficiency.EstTroughCPUUtil*100,
+				r.ScalingEfficiency.ObservedMinNodes,
+				r.ScalingEfficiency.ObservedMaxNodes))
 	}
 
 	// Spot warnings

@@ -9,7 +9,6 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/pricing"
 
 	"github.com/guimove/clusterfit/internal/model"
 )
@@ -24,7 +23,6 @@ var (
 // PricingProvider abstracts the retrieval of EC2 instance types and pricing.
 type PricingProvider interface {
 	GetInstanceTypes(ctx context.Context, filter InstanceFilter) ([]model.NodeTemplate, error)
-	GetSpotPrices(ctx context.Context, instanceTypes []string) (map[string]float64, error)
 	Region() string
 }
 
@@ -42,20 +40,14 @@ type InstanceFilter struct {
 // ec2API is a minimal interface for the EC2 calls we need.
 type ec2API interface {
 	DescribeInstanceTypes(ctx context.Context, params *ec2.DescribeInstanceTypesInput, optFns ...func(*ec2.Options)) (*ec2.DescribeInstanceTypesOutput, error)
-	DescribeSpotPriceHistory(ctx context.Context, params *ec2.DescribeSpotPriceHistoryInput, optFns ...func(*ec2.Options)) (*ec2.DescribeSpotPriceHistoryOutput, error)
 }
 
-// pricingAPI is a minimal interface for the Pricing API calls we need.
-type pricingAPI interface {
-	GetProducts(ctx context.Context, params *pricing.GetProductsInput, optFns ...func(*pricing.Options)) (*pricing.GetProductsOutput, error)
-}
-
-// AWSProvider implements PricingProvider using the AWS SDK.
+// AWSProvider implements PricingProvider using the AWS SDK for instance types
+// and the public runs-on.com API for pricing (no pricing:GetProducts permission needed).
 type AWSProvider struct {
-	ec2Client     ec2API
-	pricingClient pricingAPI
-	region        string
-	cache         *FileCache
+	ec2Client ec2API
+	region    string
+	cache     *FileCache
 }
 
 // NewAWSProvider creates a provider using the default AWS SDK config chain.
@@ -77,28 +69,15 @@ func NewAWSProvider(ctx context.Context, region string, cacheDir string) (*AWSPr
 		return nil, ErrAWSCredentials
 	}
 
-	ec2Client := ec2.NewFromConfig(cfg)
-
-	// Pricing API is only available in us-east-1
-	pricingCfg, err := awsconfig.LoadDefaultConfig(ctx,
-		awsconfig.WithRegion("us-east-1"),
-		awsconfig.WithEC2IMDSClientEnableState(imds.ClientDisabled),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("loading pricing config: %w", err)
-	}
-	pricingClient := pricing.NewFromConfig(pricingCfg)
-
 	var cache *FileCache
 	if cacheDir != "" {
 		cache = NewFileCache(cacheDir)
 	}
 
 	return &AWSProvider{
-		ec2Client:     ec2Client,
-		pricingClient: pricingClient,
-		region:        region,
-		cache:         cache,
+		ec2Client: ec2.NewFromConfig(cfg),
+		region:    region,
+		cache:     cache,
 	}, nil
 }
 

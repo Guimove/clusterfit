@@ -422,6 +422,82 @@ func TestBFD_MaxNodesConstraint(t *testing.T) {
 	}
 }
 
+func TestBFD_MinNodes_Padding(t *testing.T) {
+	packer := &BestFitDecreasing{}
+	// Single small workload that fits on 1 node, but MinNodes=3
+	input := PackInput{
+		Workloads: []model.WorkloadProfile{
+			makeWorkload("app", 500, 1*1024*1024*1024),
+		},
+		NodeTemplates: []model.NodeTemplate{
+			makeTemplate("m5.large", 2000, 8*1024*1024*1024, 29, 0.096),
+		},
+		MinNodes: 3,
+	}
+
+	result, err := packer.Pack(context.Background(), input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Nodes) != 3 {
+		t.Fatalf("expected 3 nodes (MinNodes padding), got %d", len(result.Nodes))
+	}
+	// First node should have the workload, other 2 should be empty
+	if result.Nodes[0].PodCount != 1 {
+		t.Errorf("expected 1 pod on first node, got %d", result.Nodes[0].PodCount)
+	}
+	if result.Nodes[1].PodCount != 0 {
+		t.Errorf("expected 0 pods on padded node, got %d", result.Nodes[1].PodCount)
+	}
+}
+
+func TestBFD_MinNodes_AlreadyMet(t *testing.T) {
+	packer := &BestFitDecreasing{}
+	// 5 workloads that need 5 nodes, MinNodes=3 → no extra padding
+	var workloads []model.WorkloadProfile
+	for i := 0; i < 5; i++ {
+		workloads = append(workloads, makeWorkload("app", 1500, 6*1024*1024*1024))
+	}
+
+	input := PackInput{
+		Workloads: workloads,
+		NodeTemplates: []model.NodeTemplate{
+			makeTemplate("m5.large", 2000, 8*1024*1024*1024, 29, 0.096),
+		},
+		MinNodes: 3,
+	}
+
+	result, err := packer.Pack(context.Background(), input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Nodes) != 5 {
+		t.Fatalf("expected 5 nodes (already > MinNodes), got %d", len(result.Nodes))
+	}
+}
+
+func TestBFD_MinNodes_Zero(t *testing.T) {
+	packer := &BestFitDecreasing{}
+	// MinNodes=0 should not pad
+	input := PackInput{
+		Workloads: []model.WorkloadProfile{
+			makeWorkload("app", 500, 1*1024*1024*1024),
+		},
+		NodeTemplates: []model.NodeTemplate{
+			makeTemplate("m5.large", 2000, 8*1024*1024*1024, 29, 0.096),
+		},
+		MinNodes: 0,
+	}
+
+	result, err := packer.Pack(context.Background(), input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Nodes) != 1 {
+		t.Fatalf("expected 1 node (no MinNodes padding), got %d", len(result.Nodes))
+	}
+}
+
 func BenchmarkBFD_1500Pods(b *testing.B) {
 	var workloads []model.WorkloadProfile
 	for i := 0; i < 1500; i++ {

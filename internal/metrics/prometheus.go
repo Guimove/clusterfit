@@ -130,7 +130,12 @@ func (c *PrometheusCollector) Collect(ctx context.Context, opts CollectOptions) 
 		"mem_requests":   queryPodResourceRequests("memory"),
 		"cpu_limits":     queryPodResourceLimits("cpu"),
 		"mem_limits":     queryPodResourceLimits("memory"),
-		"pod_owner":      queryPodOwner(),
+		"pod_owner":           queryPodOwner(),
+		"running_pods":        queryRunningPods(),
+		"cluster_cpu_p95":     queryClusterCPUPercentile(0.95, windowStr, stepStr),
+		"cluster_mem_p95":     queryClusterMemoryPercentile(0.95, windowStr, stepStr),
+		"min_node_count":      queryMinNodeCount(windowStr, stepStr),
+		"max_node_count":      queryMaxNodeCount(windowStr, stepStr),
 	}
 
 	results := make(chan queryResult, len(queries))
@@ -184,16 +189,19 @@ func (c *PrometheusCollector) buildClusterState(
 	memLim := extractVector(data["mem_limits"])
 	owners := extractOwnerInfo(data["pod_owner"])
 
-	// Collect all known pods
+	// Use running pods as the anchor to avoid counting ghost pods from the
+	// historical quantile_over_time window (completed Jobs, old ReplicaSet
+	// pods from rollouts, scaled-down pods, etc.).
+	running := extractVector(data["running_pods"])
 	allPods := make(map[podKey]bool)
-	for k := range cpuP95 {
+	for k := range running {
 		allPods[k] = true
 	}
-	for k := range memP95 {
-		allPods[k] = true
-	}
-	for k := range cpuReq {
-		allPods[k] = true
+	// Fallback: if kube_pod_status_phase is unavailable, use cpuReq (instant query)
+	if len(allPods) == 0 {
+		for k := range cpuReq {
+			allPods[k] = true
+		}
 	}
 
 	if len(allPods) == 0 {
@@ -280,12 +288,29 @@ func (c *PrometheusCollector) buildClusterState(
 		}
 	}
 
-	return &model.ClusterState{
+	state := &model.ClusterState{
 		CollectedAt:   time.Now(),
 		MetricsWindow: opts.Window,
 		Workloads:     workloads,
 		DaemonSets:    daemonSets,
-	}, nil
+	}
+
+	// Populate cluster-wide aggregate metrics if available
+	clusterCPU := extractScalar(data["cluster_cpu_p95"])
+	clusterMem := extractScalar(data["cluster_mem_p95"])
+	minNodes := extractScalar(data["min_node_count"])
+	maxNodes := extractScalar(data["max_node_count"])
+
+	if clusterCPU > 0 || clusterMem > 0 || minNodes > 0 || maxNodes > 0 {
+		state.AggregateMetrics = &model.ClusterAggregateMetrics{
+			P95CPUCores:    clusterCPU,
+			P95MemoryBytes: clusterMem,
+			MinNodeCount:   int(minNodes),
+			MaxNodeCount:   int(maxNodes),
+		}
+	}
+
+	return state, nil
 }
 
 // ownerInfo holds parsed pod owner reference data.
@@ -340,6 +365,26 @@ func extractOwnerInfo(v prommodel.Value) map[podKey]ownerInfo {
 		result[podKey{ns, pod}] = ownerInfo{Kind: kind, Name: name}
 	}
 	return result
+}
+
+// extractScalar extracts a single float64 value from a Prometheus query result.
+// Works with both Vector (single-element) and Scalar result types.
+func extractScalar(v prommodel.Value) float64 {
+	if v == nil {
+		return 0
+	}
+
+	switch val := v.(type) {
+	case prommodel.Vector:
+		if len(val) > 0 {
+			return float64(val[0].Value)
+		}
+	case *prommodel.Scalar:
+		if val != nil {
+			return float64(val.Value)
+		}
+	}
+	return 0
 }
 
 // formatDuration formats a time.Duration to a Prometheus-compatible duration string.

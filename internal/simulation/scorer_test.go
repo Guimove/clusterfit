@@ -136,6 +136,51 @@ func TestScorer_Warnings(t *testing.T) {
 	}
 }
 
+func TestScorer_ScalingEfficiencyPenalty(t *testing.T) {
+	scorer := NewScorer(model.ScoringWeights{
+		Cost: 0, Utilization: 0, Fragmentation: 0, Resilience: 1.0,
+	})
+
+	// Result with poor trough utilization
+	rPoor := makeSimResult(500, 0.7, 0.7, 5)
+	rPoor.ScalingEfficiency = &model.ScalingEfficiency{
+		ScalingRatio:     0.25,
+		ObservedMinNodes: 2,
+		ObservedMaxNodes: 8,
+		EstTroughNodes:   3,
+		EstTroughCPUUtil: 0.10, // very low → big penalty
+	}
+
+	// Result with good trough utilization
+	rGood := makeSimResult(500, 0.7, 0.7, 5)
+	rGood.ScalingEfficiency = &model.ScalingEfficiency{
+		ScalingRatio:     0.75,
+		ObservedMinNodes: 6,
+		ObservedMaxNodes: 8,
+		EstTroughNodes:   6,
+		EstTroughCPUUtil: 0.50,
+	}
+
+	recsPoor := scorer.RankResults([]model.SimulationResult{rPoor}, nil)
+	recsGood := scorer.RankResults([]model.SimulationResult{rGood}, nil)
+
+	if recsPoor[0].ResilienceScore >= recsGood[0].ResilienceScore {
+		t.Errorf("poor trough resilience (%v) should be less than good trough (%v)",
+			recsPoor[0].ResilienceScore, recsGood[0].ResilienceScore)
+	}
+
+	// Check warning is generated
+	foundWarning := false
+	for _, w := range recsPoor[0].Warnings {
+		if len(w) > 0 {
+			foundWarning = true
+		}
+	}
+	if !foundWarning {
+		t.Error("expected warning for poor trough utilization")
+	}
+}
+
 func TestScorer_EmptyResults(t *testing.T) {
 	scorer := NewScorer(model.DefaultScoringWeights())
 	recs := scorer.RankResults(nil, nil)

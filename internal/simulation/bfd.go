@@ -84,6 +84,14 @@ func (b *BestFitDecreasing) Pack(ctx context.Context, input PackInput) (*PackRes
 		nodes = append(nodes, n)
 	}
 
+	// Pad to MinNodes if needed (HA constraint)
+	if input.MinNodes > 0 && len(nodes) < input.MinNodes {
+		tmpl := cheapestTemplate(input.NodeTemplates)
+		for len(nodes) < input.MinNodes {
+			nodes = append(nodes, openNode(tmpl, dsOverhead, input.SystemReserved))
+		}
+	}
+
 	// Apply spot/on-demand ratio
 	if input.SpotRatio > 0 {
 		applySpotRatio(nodes, input.SpotRatio)
@@ -215,6 +223,17 @@ func place(n *nodeState, w *model.WorkloadProfile) {
 	n.remainingCPU -= w.EffectiveCPUMillis
 	n.remainingMem -= w.EffectiveMemoryBytes
 	n.podCount++
+}
+
+// cheapestTemplate returns the node template with the lowest on-demand price.
+func cheapestTemplate(templates []model.NodeTemplate) model.NodeTemplate {
+	best := templates[0]
+	for i := 1; i < len(templates); i++ {
+		if templates[i].OnDemandPricePerHour < best.OnDemandPricePerHour {
+			best = templates[i]
+		}
+	}
+	return best
 }
 
 // applySpotRatio assigns CapacitySpot to the appropriate fraction of nodes.

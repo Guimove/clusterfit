@@ -275,6 +275,49 @@ func TestClassifyWorkloads(t *testing.T) {
 	}
 }
 
+func TestClassifyWorkloads_AggregateOverridesPerPod(t *testing.T) {
+	// Per-pod effective sizing says compute-optimized (2 GiB/vCPU from requests),
+	// but cluster aggregate P95 says memory-optimized (actual usage is memory-heavy).
+	// Aggregate should win.
+	cs := ClusterState{
+		Workloads: []WorkloadProfile{
+			// Pods with high CPU requests but low actual usage
+			{EffectiveCPUMillis: 4000, EffectiveMemoryBytes: 8 * 1024 * 1024 * 1024},
+		},
+		AggregateMetrics: &ClusterAggregateMetrics{
+			P95CPUCores:    0.8,                          // actual usage: 0.8 vCPU
+			P95MemoryBytes: 9.4 * 1024 * 1024 * 1024,    // actual usage: 9.4 GiB
+			MinNodeCount:   7,
+			MaxNodeCount:   13,
+		},
+	}
+
+	gotClass, gotRatio := cs.ClassifyWorkloads()
+	// 9.4 / 0.8 = 11.75 GiB/vCPU → memory-optimized
+	if gotClass != WorkloadClassMemory {
+		t.Errorf("class = %q, want %q (aggregate should override per-pod)", gotClass, WorkloadClassMemory)
+	}
+	if gotRatio < 11.0 || gotRatio > 12.5 {
+		t.Errorf("ratio = %.2f, want ~11.75", gotRatio)
+	}
+}
+
+func TestClassifyWorkloads_FallsBackWithoutAggregate(t *testing.T) {
+	// Without aggregate metrics, per-pod classification should work as before
+	cs := ClusterState{
+		Workloads: []WorkloadProfile{
+			{EffectiveCPUMillis: 4000, EffectiveMemoryBytes: 8 * 1024 * 1024 * 1024},
+		},
+		// No AggregateMetrics
+	}
+
+	gotClass, _ := cs.ClassifyWorkloads()
+	// 8 / 4 = 2 GiB/vCPU → compute-optimized
+	if gotClass != WorkloadClassCompute {
+		t.Errorf("class = %q, want %q (fallback to per-pod)", gotClass, WorkloadClassCompute)
+	}
+}
+
 func TestFamiliesForClass(t *testing.T) {
 	tests := []struct {
 		class WorkloadClass

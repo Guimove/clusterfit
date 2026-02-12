@@ -111,16 +111,33 @@ const (
 //   - ratio < 3.0  → compute-optimized (C-series)
 //   - 3.0 ≤ ratio ≤ 6.0 → general-purpose (M-series)
 //   - ratio > 6.0  → memory-optimized (R-series)
+//
+// When cluster-level aggregate metrics are available (P95 CPU and memory over
+// the full window), they are preferred over per-pod effective totals because
+// per-pod sizing uses max(request, usage) which inflates CPU when pods
+// over-request relative to actual usage.
 func (cs ClusterState) ClassifyWorkloads() (WorkloadClass, float64) {
-	cpuMillis := cs.TotalEffectiveCPU()
-	memBytes := cs.TotalEffectiveMemory()
+	var vcpus, gib float64
 
-	if cpuMillis == 0 {
+	// Prefer cluster-level aggregate P95 when available — it reflects actual
+	// usage patterns without request inflation.
+	if cs.AggregateMetrics != nil && cs.AggregateMetrics.P95CPUCores > 0 && cs.AggregateMetrics.P95MemoryBytes > 0 {
+		vcpus = cs.AggregateMetrics.P95CPUCores
+		gib = cs.AggregateMetrics.P95MemoryBytes / (1024 * 1024 * 1024)
+	} else {
+		cpuMillis := cs.TotalEffectiveCPU()
+		memBytes := cs.TotalEffectiveMemory()
+		if cpuMillis == 0 {
+			return WorkloadClassGeneral, 4.0
+		}
+		vcpus = float64(cpuMillis) / 1000.0
+		gib = float64(memBytes) / (1024 * 1024 * 1024)
+	}
+
+	if vcpus == 0 {
 		return WorkloadClassGeneral, 4.0
 	}
 
-	vcpus := float64(cpuMillis) / 1000.0
-	gib := float64(memBytes) / (1024 * 1024 * 1024)
 	ratio := gib / vcpus
 
 	switch {

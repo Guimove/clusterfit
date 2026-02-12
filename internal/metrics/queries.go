@@ -51,7 +51,53 @@ func queryPodResourceLimits(resource string) string {
 )`, resource)
 }
 
+// queryRunningPods returns PromQL for currently running pods.
+// The pod inventory is an instant snapshot, but per-pod P95/P99 CPU and memory
+// metrics still cover the full quantile_over_time window (e.g. 7 days).
+func queryRunningPods() string {
+	return `kube_pod_status_phase{phase="Running"} == 1`
+}
+
 // queryPodOwner returns PromQL for pod owner references.
 func queryPodOwner() string {
 	return `kube_pod_owner{}`
+}
+
+// queryClusterCPUPercentile returns PromQL for cluster-wide aggregate CPU usage
+// at a given percentile over the full window. Captures scaling peaks that
+// per-pod instant snapshots miss.
+func queryClusterCPUPercentile(percentile float64, window, step string) string {
+	return fmt.Sprintf(`quantile_over_time(%g,
+  sum(
+    rate(container_cpu_usage_seconds_total{
+      container!="",
+      container!="POD",
+      image!=""
+    }[5m])
+  )[%s:%s]
+)`, percentile, window, step)
+}
+
+// queryClusterMemoryPercentile returns PromQL for cluster-wide aggregate memory
+// usage at a given percentile over the full window.
+func queryClusterMemoryPercentile(percentile float64, window, step string) string {
+	return fmt.Sprintf(`quantile_over_time(%g,
+  sum(
+    container_memory_working_set_bytes{
+      container!="",
+      container!="POD",
+      image!=""
+    }
+  )[%s:%s]
+)`, percentile, window, step)
+}
+
+// queryMinNodeCount returns PromQL for the minimum observed node count over the window.
+func queryMinNodeCount(window, step string) string {
+	return fmt.Sprintf(`min_over_time(count(kube_node_info)[%s:%s])`, window, step)
+}
+
+// queryMaxNodeCount returns PromQL for the maximum observed node count over the window.
+func queryMaxNodeCount(window, step string) string {
+	return fmt.Sprintf(`max_over_time(count(kube_node_info)[%s:%s])`, window, step)
 }

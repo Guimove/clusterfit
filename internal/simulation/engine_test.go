@@ -98,7 +98,7 @@ func TestGenerateScenarios_Homogeneous(t *testing.T) {
 		makeTemplate("m5.xlarge", 4000, 16*1024*1024*1024, 58, 0.192),
 	}
 
-	scenarios := GenerateScenarios(templates, "homogeneous", 0.0)
+	scenarios := GenerateScenarios(templates, "homogeneous", 0.0, 0)
 	if len(scenarios) != 2 {
 		t.Fatalf("expected 2 homogeneous scenarios, got %d", len(scenarios))
 	}
@@ -119,7 +119,7 @@ func TestGenerateScenarios_Mixed(t *testing.T) {
 		{InstanceType: "c5.large", InstanceFamily: "c5", AllocatableCPUMillis: 2000, AllocatableMemoryBytes: 4 * 1024 * 1024 * 1024, MaxPods: 29, OnDemandPricePerHour: 0.085},
 	}
 
-	scenarios := GenerateScenarios(templates, "mixed", 0.3)
+	scenarios := GenerateScenarios(templates, "mixed", 0.3, 0)
 
 	// Should have 1 mixed scenario for m5 family (2 sizes), c5 has only 1 size → skipped
 	found := false
@@ -142,7 +142,7 @@ func TestGenerateScenarios_Both(t *testing.T) {
 		{InstanceType: "m5.xlarge", InstanceFamily: "m5", AllocatableCPUMillis: 4000, AllocatableMemoryBytes: 16 * 1024 * 1024 * 1024, MaxPods: 58, OnDemandPricePerHour: 0.192},
 	}
 
-	scenarios := GenerateScenarios(templates, "both", 0.0)
+	scenarios := GenerateScenarios(templates, "both", 0.0, 0)
 
 	var homo, mixed int
 	for _, s := range scenarios {
@@ -159,5 +159,116 @@ func TestGenerateScenarios_Both(t *testing.T) {
 	}
 	if mixed != 1 {
 		t.Errorf("expected 1 mixed scenario, got %d", mixed)
+	}
+}
+
+func TestGenerateScenarios_MinNodes(t *testing.T) {
+	templates := []model.NodeTemplate{
+		makeTemplate("m5.large", 2000, 8*1024*1024*1024, 29, 0.096),
+	}
+
+	scenarios := GenerateScenarios(templates, "homogeneous", 0.0, 3)
+	if len(scenarios) != 1 {
+		t.Fatalf("expected 1 scenario, got %d", len(scenarios))
+	}
+	if scenarios[0].MinNodes != 3 {
+		t.Errorf("expected MinNodes=3, got %d", scenarios[0].MinNodes)
+	}
+}
+
+func TestBuildSimulationResult_ScalingEfficiency(t *testing.T) {
+	pr := &PackResult{
+		Nodes: []model.NodeAllocation{
+			{
+				Template: model.NodeTemplate{
+					InstanceType:           "m5.xlarge",
+					AllocatableCPUMillis:   4000,
+					AllocatableMemoryBytes: 16 * 1024 * 1024 * 1024,
+					OnDemandPricePerHour:   0.192,
+				},
+				UsedCPU:        3000,
+				UsedMem:        12 * 1024 * 1024 * 1024,
+				CPUUtilization: 0.75,
+				MemUtilization: 0.75,
+				PodCount:       5,
+			},
+			{
+				Template: model.NodeTemplate{
+					InstanceType:           "m5.xlarge",
+					AllocatableCPUMillis:   4000,
+					AllocatableMemoryBytes: 16 * 1024 * 1024 * 1024,
+					OnDemandPricePerHour:   0.192,
+				},
+				UsedCPU:        3000,
+				UsedMem:        12 * 1024 * 1024 * 1024,
+				CPUUtilization: 0.75,
+				MemUtilization: 0.75,
+				PodCount:       5,
+			},
+		},
+	}
+
+	agg := &model.ClusterAggregateMetrics{
+		P95CPUCores:    6.0,
+		P95MemoryBytes: 20 * 1024 * 1024 * 1024,
+		MinNodeCount:   2,
+		MaxNodeCount:   8,
+	}
+
+	scenario := Scenario{
+		Name:          "test",
+		InstanceTypes: []model.NodeTemplate{pr.Nodes[0].Template},
+		Strategy:      "homogeneous",
+		MinNodes:      3,
+	}
+
+	sr := buildSimulationResult(pr, scenario, 0, agg)
+
+	if sr.ScalingEfficiency == nil {
+		t.Fatal("expected ScalingEfficiency to be non-nil")
+	}
+	if sr.ScalingEfficiency.ScalingRatio != 0.25 {
+		t.Errorf("ScalingRatio = %v, want 0.25", sr.ScalingEfficiency.ScalingRatio)
+	}
+	if sr.ScalingEfficiency.ObservedMinNodes != 2 {
+		t.Errorf("ObservedMinNodes = %d, want 2", sr.ScalingEfficiency.ObservedMinNodes)
+	}
+	if sr.ScalingEfficiency.ObservedMaxNodes != 8 {
+		t.Errorf("ObservedMaxNodes = %d, want 8", sr.ScalingEfficiency.ObservedMaxNodes)
+	}
+	// TroughNodes: ceil(2 * 0.25) = 1, but MinNodes=3, so 3
+	if sr.ScalingEfficiency.EstTroughNodes != 3 {
+		t.Errorf("EstTroughNodes = %d, want 3", sr.ScalingEfficiency.EstTroughNodes)
+	}
+	// TroughCPUUtil: (6.0 * 0.25 * 1000) / (3 * 4000) = 1500/12000 = 0.125
+	if sr.ScalingEfficiency.EstTroughCPUUtil < 0.12 || sr.ScalingEfficiency.EstTroughCPUUtil > 0.13 {
+		t.Errorf("EstTroughCPUUtil = %v, want ~0.125", sr.ScalingEfficiency.EstTroughCPUUtil)
+	}
+}
+
+func TestBuildSimulationResult_NoAggregateMetrics(t *testing.T) {
+	pr := &PackResult{
+		Nodes: []model.NodeAllocation{
+			{
+				Template: model.NodeTemplate{
+					InstanceType:           "m5.xlarge",
+					AllocatableCPUMillis:   4000,
+					AllocatableMemoryBytes: 16 * 1024 * 1024 * 1024,
+					OnDemandPricePerHour:   0.192,
+				},
+				UsedCPU:        3000,
+				UsedMem:        12 * 1024 * 1024 * 1024,
+				CPUUtilization: 0.75,
+				MemUtilization: 0.75,
+				PodCount:       5,
+			},
+		},
+	}
+
+	scenario := Scenario{Name: "test", Strategy: "homogeneous"}
+	sr := buildSimulationResult(pr, scenario, 0, nil)
+
+	if sr.ScalingEfficiency != nil {
+		t.Error("expected ScalingEfficiency to be nil when no aggregate metrics")
 	}
 }

@@ -67,16 +67,97 @@ func (o *Orchestrator) Recommend(ctx context.Context) ([]model.Recommendation, e
 	_, _ = fmt.Fprintf(o.Writer, "Found %d workloads and %d DaemonSets\n",
 		state.WorkloadCount(), len(state.DaemonSets))
 
-	// Step 2: Fetch instance types
-	_, _ = fmt.Fprintf(o.Writer, "Fetching EC2 instance types for %s...\n", cfg.Cluster.Region)
+	// Step 2: Auto-classify workloads if families are not explicitly set
+	autoClassified := len(cfg.Instances.Families) == 0
+	var workloadClass model.WorkloadClass
+	var gibPerVCPU float64
 
-	archs := make([]model.Architecture, len(cfg.Instances.Architectures))
-	for i, a := range cfg.Instances.Architectures {
-		archs[i] = model.Architecture(a)
+	if autoClassified {
+		workloadClass, gibPerVCPU = state.ClassifyWorkloads()
+		cfg.Instances.Families = model.FamiliesForClass(workloadClass, "intel")
+		_, _ = fmt.Fprintf(o.Writer, "Workload profile: %s (%.1f GiB/vCPU) → families %v\n",
+			workloadClass, gibPerVCPU, cfg.Instances.Families)
 	}
 
+	// Step 3: Fetch instance types and run primary simulation
+	_, _ = fmt.Fprintf(o.Writer, "Fetching EC2 instance types for %s...\n", cfg.Cluster.Region)
+
+	weights := model.ScoringWeights{
+		Cost:          cfg.Scoring.Weights.Cost,
+		Utilization:   cfg.Scoring.Weights.Utilization,
+		Fragmentation: cfg.Scoring.Weights.Fragmentation,
+		Resilience:    cfg.Scoring.Weights.Resilience,
+	}
+
+	recs, err := o.runSimulation(ctx, cfg, state, weights, cfg.Instances.Families, []model.Architecture{model.ArchAMD64})
+	if err != nil {
+		return nil, err
+	}
+
+	// Step 4: Run architecture alternatives (only when auto-classified)
+	var alternatives []model.AlternativeArch
+	if autoClassified && len(recs) > 0 {
+		primaryCost := recs[0].MonthlyCost
+
+		type altDef struct {
+			label    string
+			families []string
+			arch     model.Architecture
+		}
+		altDefs := []altDef{
+			{"arm64 (Graviton)", model.FamiliesForClass(workloadClass, "graviton"), model.ArchARM64},
+			{"amd64 (AMD)", model.FamiliesForClass(workloadClass, "amd"), model.ArchAMD64},
+		}
+
+		for _, ad := range altDefs {
+			altRecs, altErr := o.runSimulation(ctx, cfg, state, weights, ad.families, []model.Architecture{ad.arch})
+			if altErr != nil || len(altRecs) == 0 {
+				continue
+			}
+			savings := 0.0
+			if primaryCost > 0 {
+				savings = (primaryCost - altRecs[0].MonthlyCost) / primaryCost * 100
+			}
+			alternatives = append(alternatives, model.AlternativeArch{
+				Architecture: ad.label,
+				TopPick:      altRecs[0],
+				Savings:      savings,
+			})
+		}
+	}
+
+	// Step 5: Report
+	reporter := report.NewReporter(cfg.Output.Format, o.Writer)
+	meta := report.ReportMeta{
+		ClusterName:      state.ClusterName,
+		Region:           state.Region,
+		CollectedAt:      state.CollectedAt,
+		WindowStart:      opts.Window.Start,
+		WindowEnd:        opts.Window.End,
+		Percentile:       cfg.Metrics.Percentile,
+		TotalPods:        state.WorkloadCount(),
+		TotalDaemons:     len(state.DaemonSets),
+		Strategy:         cfg.Simulation.Strategy,
+		MinNodes:         cfg.Simulation.MinNodes,
+		AggregateMetrics: state.AggregateMetrics,
+	}
+	if autoClassified {
+		meta.WorkloadClass = string(workloadClass)
+		meta.GiBPerVCPU = gibPerVCPU
+		meta.Alternatives = alternatives
+	}
+
+	if err := reporter.Report(ctx, recs, meta); err != nil {
+		return nil, fmt.Errorf("generating report: %w", err)
+	}
+
+	return recs, nil
+}
+
+// runSimulation fetches instance types for the given families/architectures and runs the simulation pipeline.
+func (o *Orchestrator) runSimulation(ctx context.Context, cfg config.Config, state *model.ClusterState, weights model.ScoringWeights, families []string, archs []model.Architecture) ([]model.Recommendation, error) {
 	filter := aws.InstanceFilter{
-		Families:              cfg.Instances.Families,
+		Families:              families,
 		MinVCPUs:              cfg.Instances.MinVCPUs,
 		MaxVCPUs:              cfg.Instances.MaxVCPUs,
 		Architectures:         archs,
@@ -90,22 +171,15 @@ func (o *Orchestrator) Recommend(ctx context.Context) ([]model.Recommendation, e
 		return nil, fmt.Errorf("fetching instance types: %w", err)
 	}
 
-	// Step 3: Generate and run simulations
-	scenarios := simulation.GenerateScenarios(templates, cfg.Simulation.Strategy, cfg.Simulation.SpotRatio)
+	scenarios := simulation.GenerateScenarios(templates, cfg.Simulation.Strategy, cfg.Simulation.SpotRatio, cfg.Simulation.MinNodes)
 
 	_, _ = fmt.Fprintf(o.Writer, "Simulating %d scenarios across %d instance types...\n",
 		len(scenarios), len(templates))
 
-	weights := model.ScoringWeights{
-		Cost:          cfg.Scoring.Weights.Cost,
-		Utilization:   cfg.Scoring.Weights.Utilization,
-		Fragmentation: cfg.Scoring.Weights.Fragmentation,
-		Resilience:    cfg.Scoring.Weights.Resilience,
-	}
-
 	packer := &simulation.BestFitDecreasing{}
 	scorer := simulation.NewScorer(weights)
 	scorer.DaemonSetCount = len(state.DaemonSets)
+	scorer.AggregateMetrics = state.AggregateMetrics
 	engine := simulation.NewEngine(packer, scorer)
 
 	recs, err := engine.RunAll(ctx, scenarios, *state)
@@ -113,27 +187,8 @@ func (o *Orchestrator) Recommend(ctx context.Context) ([]model.Recommendation, e
 		return nil, fmt.Errorf("running simulations: %w", err)
 	}
 
-	// Limit to top N
 	if cfg.Output.TopN > 0 && len(recs) > cfg.Output.TopN {
 		recs = recs[:cfg.Output.TopN]
-	}
-
-	// Step 4: Report
-	reporter := report.NewReporter(cfg.Output.Format, o.Writer)
-	meta := report.ReportMeta{
-		ClusterName:  state.ClusterName,
-		Region:       state.Region,
-		CollectedAt:  state.CollectedAt,
-		WindowStart:  opts.Window.Start,
-		WindowEnd:    opts.Window.End,
-		Percentile:   cfg.Metrics.Percentile,
-		TotalPods:    state.WorkloadCount(),
-		TotalDaemons: len(state.DaemonSets),
-		Strategy:     cfg.Simulation.Strategy,
-	}
-
-	if err := reporter.Report(ctx, recs, meta); err != nil {
-		return nil, fmt.Errorf("generating report: %w", err)
 	}
 
 	return recs, nil
@@ -143,7 +198,7 @@ func (o *Orchestrator) Recommend(ctx context.Context) ([]model.Recommendation, e
 func (o *Orchestrator) Simulate(ctx context.Context, state *model.ClusterState, instanceTypes []model.NodeTemplate) ([]model.Recommendation, error) {
 	cfg := o.Config
 
-	scenarios := simulation.GenerateScenarios(instanceTypes, cfg.Simulation.Strategy, cfg.Simulation.SpotRatio)
+	scenarios := simulation.GenerateScenarios(instanceTypes, cfg.Simulation.Strategy, cfg.Simulation.SpotRatio, cfg.Simulation.MinNodes)
 
 	weights := model.ScoringWeights{
 		Cost:          cfg.Scoring.Weights.Cost,
@@ -154,6 +209,7 @@ func (o *Orchestrator) Simulate(ctx context.Context, state *model.ClusterState, 
 
 	packer := &simulation.BestFitDecreasing{}
 	scorer := simulation.NewScorer(weights)
+	scorer.AggregateMetrics = state.AggregateMetrics
 	engine := simulation.NewEngine(packer, scorer)
 
 	recs, err := engine.RunAll(ctx, scenarios, *state)

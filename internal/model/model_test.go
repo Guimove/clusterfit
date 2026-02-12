@@ -197,3 +197,142 @@ func TestDefaultScoringWeights(t *testing.T) {
 		t.Errorf("weights sum to %v, want ~1.0", sum)
 	}
 }
+
+func TestClassifyWorkloads(t *testing.T) {
+	tests := []struct {
+		name      string
+		cpuMillis int64
+		memBytes  int64
+		wantClass WorkloadClass
+		wantLo    float64 // minimum expected ratio
+		wantHi    float64 // maximum expected ratio
+	}{
+		{
+			name:      "compute-optimized: 2 GiB per vCPU",
+			cpuMillis: 4000,                           // 4 vCPUs
+			memBytes:  8 * 1024 * 1024 * 1024,         // 8 GiB
+			wantClass: WorkloadClassCompute,
+			wantLo:    1.9,
+			wantHi:    2.1,
+		},
+		{
+			name:      "general-purpose: 4 GiB per vCPU",
+			cpuMillis: 4000,                            // 4 vCPUs
+			memBytes:  16 * 1024 * 1024 * 1024,         // 16 GiB
+			wantClass: WorkloadClassGeneral,
+			wantLo:    3.9,
+			wantHi:    4.1,
+		},
+		{
+			name:      "memory-optimized: 8 GiB per vCPU",
+			cpuMillis: 4000,                            // 4 vCPUs
+			memBytes:  32 * 1024 * 1024 * 1024,         // 32 GiB
+			wantClass: WorkloadClassMemory,
+			wantLo:    7.9,
+			wantHi:    8.1,
+		},
+		{
+			name:      "boundary: exactly 3.0 is general-purpose",
+			cpuMillis: 1000,                            // 1 vCPU
+			memBytes:  3 * 1024 * 1024 * 1024,          // 3 GiB
+			wantClass: WorkloadClassGeneral,
+			wantLo:    2.9,
+			wantHi:    3.1,
+		},
+		{
+			name:      "boundary: exactly 6.0 is general-purpose",
+			cpuMillis: 1000,                            // 1 vCPU
+			memBytes:  6 * 1024 * 1024 * 1024,          // 6 GiB
+			wantClass: WorkloadClassGeneral,
+			wantLo:    5.9,
+			wantHi:    6.1,
+		},
+		{
+			name:      "zero CPU defaults to general-purpose",
+			cpuMillis: 0,
+			memBytes:  1024,
+			wantClass: WorkloadClassGeneral,
+			wantLo:    3.9,
+			wantHi:    4.1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cs := ClusterState{
+				Workloads: []WorkloadProfile{
+					{EffectiveCPUMillis: tt.cpuMillis, EffectiveMemoryBytes: tt.memBytes},
+				},
+			}
+			gotClass, gotRatio := cs.ClassifyWorkloads()
+			if gotClass != tt.wantClass {
+				t.Errorf("class = %q, want %q", gotClass, tt.wantClass)
+			}
+			if gotRatio < tt.wantLo || gotRatio > tt.wantHi {
+				t.Errorf("ratio = %.2f, want [%.1f, %.1f]", gotRatio, tt.wantLo, tt.wantHi)
+			}
+		})
+	}
+}
+
+func TestFamiliesForClass(t *testing.T) {
+	tests := []struct {
+		class WorkloadClass
+		arch  string
+		want  []string
+	}{
+		{WorkloadClassCompute, "intel", []string{"c7i", "c6i"}},
+		{WorkloadClassCompute, "amd", []string{"c7a", "c6a"}},
+		{WorkloadClassCompute, "graviton", []string{"c7g", "c6g"}},
+		{WorkloadClassGeneral, "intel", []string{"m7i", "m6i"}},
+		{WorkloadClassGeneral, "amd", []string{"m7a", "m6a"}},
+		{WorkloadClassGeneral, "graviton", []string{"m7g", "m6g"}},
+		{WorkloadClassMemory, "intel", []string{"r7i", "r6i"}},
+		{WorkloadClassMemory, "amd", []string{"r7a", "r6a"}},
+		{WorkloadClassMemory, "graviton", []string{"r7g", "r6g"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(string(tt.class)+"/"+tt.arch, func(t *testing.T) {
+			got := FamiliesForClass(tt.class, tt.arch)
+			if len(got) != len(tt.want) {
+				t.Fatalf("len = %d, want %d", len(got), len(tt.want))
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Errorf("family[%d] = %q, want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestClusterAggregateMetrics_ScalingRatio(t *testing.T) {
+	tests := []struct {
+		name string
+		cam  *ClusterAggregateMetrics
+		want float64
+	}{
+		{"nil metrics", nil, 1.0},
+		{"zero max", &ClusterAggregateMetrics{MinNodeCount: 3, MaxNodeCount: 0}, 1.0},
+		{"equal min max", &ClusterAggregateMetrics{MinNodeCount: 5, MaxNodeCount: 5}, 1.0},
+		{"3 to 10", &ClusterAggregateMetrics{MinNodeCount: 3, MaxNodeCount: 10}, 0.3},
+		{"1 to 4", &ClusterAggregateMetrics{MinNodeCount: 1, MaxNodeCount: 4}, 0.25},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.cam.ScalingRatio()
+			if got < tt.want-0.001 || got > tt.want+0.001 {
+				t.Errorf("ScalingRatio() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFamiliesForClass_UnknownArch(t *testing.T) {
+	got := FamiliesForClass(WorkloadClassGeneral, "unknown")
+	if got != nil {
+		t.Errorf("expected nil for unknown arch, got %v", got)
+	}
+}

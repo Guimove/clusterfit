@@ -10,8 +10,9 @@ import (
 
 // Scorer computes composite scores for simulation results and ranks them.
 type Scorer struct {
-	Weights        model.ScoringWeights
-	DaemonSetCount int // number of DaemonSets (affects node count preference)
+	Weights          model.ScoringWeights
+	DaemonSetCount   int                            // number of DaemonSets (affects node count preference)
+	AggregateMetrics *model.ClusterAggregateMetrics // cluster-wide metrics for scaling efficiency scoring
 }
 
 // NewScorer creates a scorer with the given weights.
@@ -122,6 +123,13 @@ func (s *Scorer) score(
 		rec.ResilienceScore = math.Max(0, rec.ResilienceScore-penalty)
 	}
 
+	// Penalize poor trough utilization when scaling data is available
+	if r.ScalingEfficiency != nil && r.ScalingEfficiency.EstTroughCPUUtil < 0.30 {
+		// Scale penalty: 0% trough → -25 points, 30% trough → 0 points
+		penalty := (0.30 - r.ScalingEfficiency.EstTroughCPUUtil) / 0.30 * 25
+		rec.ResilienceScore = math.Max(0, rec.ResilienceScore-penalty)
+	}
+
 	// Composite score
 	rec.OverallScore = s.Weights.Cost*rec.CostScore +
 		s.Weights.Utilization*rec.UtilizationScore +
@@ -171,6 +179,15 @@ func generateWarnings(r model.SimulationResult) []string {
 		warnings = append(warnings,
 			fmt.Sprintf("%.0f%% of nodes are underutilized (<%d%% on one dimension)",
 				r.Fragmentation.UnderutilizedNodeFraction*100, int(LowUtilThreshold*100)))
+	}
+
+	// Scaling efficiency warning
+	if r.ScalingEfficiency != nil && r.ScalingEfficiency.EstTroughCPUUtil < 0.30 {
+		warnings = append(warnings,
+			fmt.Sprintf("Low trough utilization (%.0f%% CPU) when cluster scales %d→%d nodes",
+				r.ScalingEfficiency.EstTroughCPUUtil*100,
+				r.ScalingEfficiency.ObservedMinNodes,
+				r.ScalingEfficiency.ObservedMaxNodes))
 	}
 
 	// Spot warnings

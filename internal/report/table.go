@@ -27,6 +27,15 @@ func (r *TableReporter) Report(_ context.Context, recs []model.Recommendation, m
 	ew.printf("Percentile:  p%g\n", meta.Percentile*100)
 	ew.printf("Window:      %s to %s\n",
 		meta.WindowStart.Format("2006-01-02"), meta.WindowEnd.Format("2006-01-02"))
+	if meta.AggregateMetrics != nil {
+		am := meta.AggregateMetrics
+		memGiB := am.P95MemoryBytes / (1024 * 1024 * 1024)
+		ew.printf("Cluster P95: %.1f vCPU, %.1f GiB\n", am.P95CPUCores, memGiB)
+		ew.printf("Node range:  %d → %d (observed over window)\n", am.MinNodeCount, am.MaxNodeCount)
+	}
+	if meta.MinNodes > 0 {
+		ew.printf("Min nodes:   %d (HA constraint)\n", meta.MinNodes)
+	}
 	ew.printf("%s\n\n", strings.Repeat("=", 60))
 
 	if len(recs) == 0 {
@@ -54,6 +63,9 @@ func (r *TableReporter) Report(_ context.Context, recs []model.Recommendation, m
 		}
 		if len(sr.UnschedulablePods) > 0 {
 			notes += fmt.Sprintf(" [%d unschedulable]", len(sr.UnschedulablePods))
+		}
+		if sr.ScalingEfficiency != nil && sr.ScalingEfficiency.EstTroughCPUUtil < 0.30 {
+			notes += fmt.Sprintf(" [trough: %.0f%%]", sr.ScalingEfficiency.EstTroughCPUUtil*100)
 		}
 
 		ew.printf("#%-3d %-30s %6d %6.1f%% %6.1f%% %6.1f %8.0f %s\n",
@@ -88,6 +100,26 @@ func (r *TableReporter) Report(_ context.Context, recs []model.Recommendation, m
 		ew.printf("\n  Warnings:\n")
 		for _, w := range top.Warnings {
 			ew.printf("    - %s\n", w)
+		}
+	}
+
+	// Workload classification and architecture alternatives
+	if meta.WorkloadClass != "" {
+		ew.printf("\nWorkload profile: %s (%.1f GiB/vCPU)\n", meta.WorkloadClass, meta.GiBPerVCPU)
+	}
+
+	if len(meta.Alternatives) > 0 {
+		ew.printf("\nArchitecture alternatives:\n")
+		for _, alt := range meta.Alternatives {
+			sr := alt.TopPick.SimulationResult
+			ew.printf("  %-18s %s x %d — $%.0f/mo",
+				alt.Architecture+":", sr.InstanceConfig.Label(), sr.TotalNodes, alt.TopPick.MonthlyCost)
+			if alt.Savings > 0 {
+				ew.printf(" (%.0f%% cheaper)", alt.Savings)
+			} else if alt.Savings < 0 {
+				ew.printf(" (%.0f%% more expensive)", -alt.Savings)
+			}
+			ew.printf("\n")
 		}
 	}
 

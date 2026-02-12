@@ -55,6 +55,7 @@ simulation:
     cpu_millis: 100
     memory_mib: 256
   max_nodes: 500
+  min_nodes: 3                   # HA constraint: minimum node count (0 = disabled)
 
 scoring:
   weights:

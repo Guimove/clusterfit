@@ -60,6 +60,16 @@ type FragmentationReport struct {
 	ResourceBalanceScore float64 `json:"resource_balance_score"`
 }
 
+// ScalingEfficiency captures how well an instance type handles the observed
+// scaling range (min → max nodes over the metrics window).
+type ScalingEfficiency struct {
+	ScalingRatio     float64 `json:"scaling_ratio"`      // min_nodes/max_nodes observed
+	ObservedMinNodes int     `json:"observed_min_nodes"`
+	ObservedMaxNodes int     `json:"observed_max_nodes"`
+	EstTroughNodes   int     `json:"est_trough_nodes"`   // max(MinNodes, ceil(peakNodes * ratio))
+	EstTroughCPUUtil float64 `json:"est_trough_cpu_util"` // 0.0–1.0
+}
+
 // SimulationResult captures the outcome of a single bin-packing run.
 type SimulationResult struct {
 	// The instance configuration used
@@ -80,6 +90,9 @@ type SimulationResult struct {
 	AvgCPUUtilization float64             `json:"avg_cpu_utilization"`
 	AvgMemUtilization float64             `json:"avg_mem_utilization"`
 	Fragmentation     FragmentationReport `json:"fragmentation"`
+
+	// Scaling efficiency (nil if no aggregate metrics available)
+	ScalingEfficiency *ScalingEfficiency `json:"scaling_efficiency,omitempty"`
 
 	// Pods that could not be placed
 	UnschedulablePods []WorkloadProfile `json:"unschedulable_pods,omitempty"`
@@ -126,4 +139,11 @@ type Recommendation struct {
 	// Human-readable rationale
 	Rationale string   `json:"rationale"`
 	Warnings  []string `json:"warnings,omitempty"`
+}
+
+// AlternativeArch summarises the top pick for an alternative CPU architecture.
+type AlternativeArch struct {
+	Architecture string         `json:"architecture"` // e.g. "arm64 (Graviton)", "amd64 (AMD)"
+	TopPick      Recommendation `json:"top_pick"`
+	Savings      float64        `json:"savings_pct"` // % cheaper vs primary top pick (positive = cheaper)
 }

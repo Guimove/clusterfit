@@ -3,6 +3,7 @@ package simulation
 import (
 	"context"
 	"fmt"
+	"math"
 	"runtime"
 	"sync"
 	"time"
@@ -32,6 +33,7 @@ type Scenario struct {
 	InstanceTypes []model.NodeTemplate
 	Strategy      string  // "homogeneous" or "mixed"
 	SpotRatio     float64
+	MinNodes      int
 }
 
 // RunAll executes all scenarios and returns ranked recommendations.
@@ -100,6 +102,7 @@ func (e *Engine) runOne(
 		DaemonSets:     state.DaemonSets,
 		NodeTemplates:  scenario.InstanceTypes,
 		SystemReserved: state.SystemReserved,
+		MinNodes:       scenario.MinNodes,
 		SpotRatio:      scenario.SpotRatio,
 	}
 
@@ -111,7 +114,7 @@ func (e *Engine) runOne(
 	duration := time.Since(start)
 
 	// Build simulation result
-	simResult := buildSimulationResult(result, scenario, duration)
+	simResult := buildSimulationResult(result, scenario, duration, state.AggregateMetrics)
 	return simResult, nil
 }
 
@@ -120,6 +123,7 @@ func buildSimulationResult(
 	pr *PackResult,
 	scenario Scenario,
 	duration time.Duration,
+	aggMetrics *model.ClusterAggregateMetrics,
 ) model.SimulationResult {
 	sr := model.SimulationResult{
 		InstanceConfig: model.InstanceConfig{
@@ -156,6 +160,30 @@ func buildSimulationResult(
 	// Fragmentation analysis
 	sr.Fragmentation = AnalyzeFragmentation(pr.Nodes)
 
+	// Scaling efficiency: estimate trough utilization using aggregate metrics
+	if aggMetrics != nil && aggMetrics.MaxNodeCount > 0 && len(pr.Nodes) > 0 {
+		ratio := aggMetrics.ScalingRatio()
+		troughNodes := int(math.Ceil(float64(sr.TotalNodes) * ratio))
+		if scenario.MinNodes > 0 && troughNodes < scenario.MinNodes {
+			troughNodes = scenario.MinNodes
+		}
+		troughCPUUtil := 0.0
+		if troughNodes > 0 && pr.Nodes[0].Template.AllocatableCPUMillis > 0 {
+			allocPerNode := pr.Nodes[0].Template.AllocatableCPUMillis
+			troughCPUUtil = (aggMetrics.P95CPUCores * ratio * 1000) / float64(int64(troughNodes)*allocPerNode)
+			if troughCPUUtil > 1.0 {
+				troughCPUUtil = 1.0
+			}
+		}
+		sr.ScalingEfficiency = &model.ScalingEfficiency{
+			ScalingRatio:     ratio,
+			ObservedMinNodes: aggMetrics.MinNodeCount,
+			ObservedMaxNodes: aggMetrics.MaxNodeCount,
+			EstTroughNodes:   troughNodes,
+			EstTroughCPUUtil: troughCPUUtil,
+		}
+	}
+
 	return sr
 }
 
@@ -163,7 +191,8 @@ func buildSimulationResult(
 // For "homogeneous" strategy: one scenario per instance type.
 // For "mixed" strategy: one scenario per instance family (all sizes within the family).
 // For "both": all of the above.
-func GenerateScenarios(templates []model.NodeTemplate, strategy string, spotRatio float64) []Scenario {
+// minNodes is the HA constraint applied to every scenario.
+func GenerateScenarios(templates []model.NodeTemplate, strategy string, spotRatio float64, minNodes int) []Scenario {
 	var scenarios []Scenario
 
 	if strategy == "homogeneous" || strategy == "both" {
@@ -174,6 +203,7 @@ func GenerateScenarios(templates []model.NodeTemplate, strategy string, spotRati
 				InstanceTypes: []model.NodeTemplate{t},
 				Strategy:      "homogeneous",
 				SpotRatio:     spotRatio,
+				MinNodes:      minNodes,
 			})
 		}
 	}
@@ -195,6 +225,7 @@ func GenerateScenarios(templates []model.NodeTemplate, strategy string, spotRati
 				InstanceTypes: types,
 				Strategy:      "mixed",
 				SpotRatio:     spotRatio,
+				MinNodes:      minNodes,
 			})
 		}
 	}

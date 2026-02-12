@@ -24,6 +24,15 @@ type ReportMeta struct {
 	TotalPods    int
 	TotalDaemons int
 	Strategy     string
+	MinNodes     int
+
+	// Cluster-wide aggregate metrics (nil if unavailable)
+	AggregateMetrics *model.ClusterAggregateMetrics
+
+	// Workload classification (populated when auto-detection is used)
+	WorkloadClass string                  // e.g. "general-purpose"
+	GiBPerVCPU    float64                 // aggregate ratio
+	Alternatives  []model.AlternativeArch // architecture alternatives
 }
 
 // NewReporter creates a reporter for the given format writing to w.

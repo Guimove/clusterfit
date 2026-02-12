@@ -22,6 +22,7 @@ type PackInput struct {
 	NodeTemplates  []model.NodeTemplate
 	SystemReserved model.ResourceQuantity
 	MaxNodes       int     // 0 = unlimited
+	MinNodes       int     // 0 = no minimum; pad with empty nodes if packing uses fewer
 	SpotRatio      float64 // Fraction of nodes to be spot (0.0 - 1.0)
 }
 

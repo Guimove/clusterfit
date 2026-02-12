@@ -3,6 +3,7 @@ package aws
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -101,6 +102,15 @@ func (p *AWSProvider) GetInstanceTypes(ctx context.Context, filter InstanceFilte
 
 	if len(templates) == 0 {
 		return nil, ErrNoInstanceTypes
+	}
+
+	// Enrich with on-demand and spot pricing (best-effort — simulation
+	// works without prices but scoring/cost will be zero)
+	priced, err := p.EnrichWithPricing(ctx, templates)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "Warning: could not fetch pricing data: %v\n", err)
+	} else if priced == 0 {
+		_, _ = fmt.Fprintf(os.Stderr, "Warning: no pricing data found for %s (costs will show as $0)\n", p.region)
 	}
 
 	return templates, nil

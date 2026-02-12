@@ -100,7 +100,7 @@ func Default() Config {
 			},
 		},
 		Instances: InstancesConfig{
-			Families:              []string{"m5", "m6i", "m7i", "c5", "c6i", "r5", "r6i"},
+			Families:              []string{"m6i", "m7i", "m7a", "c6i", "c7i", "c7a", "r6i", "r7i", "r7a"},
 			Architectures:         []string{"amd64"},
 			ExcludeBurstable:      true,
 			ExcludeBareMetal:      true,

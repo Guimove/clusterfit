@@ -90,13 +90,11 @@ func (o *Orchestrator) Recommend(ctx context.Context) ([]model.Recommendation, e
 		return nil, fmt.Errorf("fetching instance types: %w", err)
 	}
 
-	_, _ = fmt.Fprintf(o.Writer, "Evaluating %d instance types across %d scenarios...\n",
-		len(templates), 0) // Will be updated below
-
 	// Step 3: Generate and run simulations
 	scenarios := simulation.GenerateScenarios(templates, cfg.Simulation.Strategy, cfg.Simulation.SpotRatio)
 
-	_, _ = fmt.Fprintf(o.Writer, "Running %d simulation scenarios...\n", len(scenarios))
+	_, _ = fmt.Fprintf(o.Writer, "Simulating %d scenarios across %d instance types...\n",
+		len(scenarios), len(templates))
 
 	weights := model.ScoringWeights{
 		Cost:          cfg.Scoring.Weights.Cost,

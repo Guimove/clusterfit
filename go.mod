@@ -5,8 +5,8 @@ go 1.25.0
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.7
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.17
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.287.0
-	github.com/aws/aws-sdk-go-v2/service/pricing v1.40.11
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.5
 	github.com/spf13/cobra v1.10.2
@@ -18,7 +18,6 @@ require (
 
 require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.7 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.17 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.17 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.17 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4 // indirect

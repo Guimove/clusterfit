@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          COMMIT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          MODULE=github.com/guimove/clusterfit
+          go build -ldflags "-s -w \
+            -X ${MODULE}/pkg/version.Version=${VERSION} \
+            -X ${MODULE}/pkg/version.Commit=${COMMIT} \
+            -X ${MODULE}/pkg/version.BuildDate=${BUILD_DATE}" \
+            -o clusterfit-${GOOS}-${GOARCH} .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: clusterfit-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: clusterfit-${{ matrix.goos }}-${{ matrix.goarch }}
+
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/*

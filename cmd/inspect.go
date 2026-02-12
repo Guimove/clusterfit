@@ -45,9 +45,12 @@ func runInspect(cmd *cobra.Command, args []string) error {
 		cfg.Metrics.Percentile = p
 	}
 
-	collector, err := resolveCollector(ctx)
+	collector, cleanup, err := resolveCollector(ctx)
 	if err != nil {
 		return err
+	}
+	if cleanup != nil {
+		defer cleanup()
 	}
 
 	if err := collector.Ping(ctx); err != nil {

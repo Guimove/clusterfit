@@ -15,6 +15,7 @@ type DiscoveryResult struct {
 	Type        string // "prometheus", "thanos", "cortex", "victoria-metrics", "mimir"
 	ServiceName string
 	Namespace   string
+	Port        int32 // service port (needed for port-forwarding)
 }
 
 // DiscoveryOptions configures the service discovery search.
@@ -104,6 +105,7 @@ func Discover(ctx context.Context, client kubernetes.Interface, opts DiscoveryOp
 				Type:        c.backendType,
 				ServiceName: svc.Name,
 				Namespace:   svc.Namespace,
+				Port:        port,
 			}, nil
 		}
 	}

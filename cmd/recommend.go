@@ -72,9 +72,12 @@ func runRecommend(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create metrics collector
-	collector, err := resolveCollector(ctx)
+	collector, cleanup, err := resolveCollector(ctx)
 	if err != nil {
 		return fmt.Errorf("creating metrics collector: %w", err)
+	}
+	if cleanup != nil {
+		defer cleanup()
 	}
 
 	// Verify connectivity

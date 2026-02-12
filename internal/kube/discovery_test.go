@@ -48,6 +48,9 @@ func TestDiscoverThanos(t *testing.T) {
 	if result.URL != "http://thanos-query.monitoring.svc:9090" {
 		t.Errorf("unexpected URL: %s", result.URL)
 	}
+	if result.Port != 9090 {
+		t.Errorf("expected port 9090, got %d", result.Port)
+	}
 }
 
 func TestDiscoverThanosSimpleLabel(t *testing.T) {
@@ -66,6 +69,9 @@ func TestDiscoverThanosSimpleLabel(t *testing.T) {
 	}
 	if result.ServiceName != "thanos-querier" {
 		t.Errorf("expected service name thanos-querier, got %s", result.ServiceName)
+	}
+	if result.Port != 10902 {
+		t.Errorf("expected port 10902, got %d", result.Port)
 	}
 }
 
@@ -120,6 +126,9 @@ func TestDiscoverVictoriaMetrics(t *testing.T) {
 	}
 	if result.URL != "http://vmsingle.vm.svc:8428" {
 		t.Errorf("unexpected URL: %s", result.URL)
+	}
+	if result.Port != 8428 {
+		t.Errorf("expected port 8428, got %d", result.Port)
 	}
 }
 

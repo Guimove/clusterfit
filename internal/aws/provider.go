@@ -4,16 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/pricing"
 
 	"github.com/guimove/clusterfit/internal/model"
 )
 
+const credentialCheckTimeout = 3 * time.Second
+
 var (
-	ErrAWSCredentials  = errors.New("unable to load AWS credentials")
+	ErrAWSCredentials  = errors.New("AWS credentials not found; set AWS_PROFILE, run 'aws sso login', or configure ~/.aws/credentials")
 	ErrNoInstanceTypes = errors.New("no instance types match the specified filters")
 )
 
@@ -55,16 +59,31 @@ type AWSProvider struct {
 }
 
 // NewAWSProvider creates a provider using the default AWS SDK config chain.
+// IMDS (EC2 metadata) is disabled to avoid long timeouts when running locally.
+// On EC2, use environment variables or instance profile via AWS_PROFILE.
 func NewAWSProvider(ctx context.Context, region string, cacheDir string) (*AWSProvider, error) {
-	cfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(region))
+	cfg, err := awsconfig.LoadDefaultConfig(ctx,
+		awsconfig.WithRegion(region),
+		awsconfig.WithEC2IMDSClientEnableState(imds.ClientDisabled),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrAWSCredentials, err)
+	}
+
+	// Verify credentials are available before making any API calls
+	credCtx, cancel := context.WithTimeout(ctx, credentialCheckTimeout)
+	defer cancel()
+	if _, err := cfg.Credentials.Retrieve(credCtx); err != nil {
+		return nil, ErrAWSCredentials
 	}
 
 	ec2Client := ec2.NewFromConfig(cfg)
 
 	// Pricing API is only available in us-east-1
-	pricingCfg, err := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion("us-east-1"))
+	pricingCfg, err := awsconfig.LoadDefaultConfig(ctx,
+		awsconfig.WithRegion("us-east-1"),
+		awsconfig.WithEC2IMDSClientEnableState(imds.ClientDisabled),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("loading pricing config: %w", err)
 	}

@@ -1,119 +1,75 @@
 package kube
 
 import (
-	"context"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestFindPodForService(t *testing.T) {
-	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
-		&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "thanos-query",
-				Namespace: "monitoring",
-			},
-			Spec: corev1.ServiceSpec{
-				Selector: map[string]string{"app": "thanos-query"},
-				Ports:    []corev1.ServicePort{tcpPort("http", 9090)},
-			},
-		},
-		&corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "thanos-query-abc",
-				Namespace: "monitoring",
-				Labels:    map[string]string{"app": "thanos-query"},
-			},
-			Status: corev1.PodStatus{Phase: corev1.PodRunning},
-		},
-	)
-
-	podName, err := FindPodForService(context.Background(), client, "thanos-query", "monitoring")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+func TestResolveTargetPortInt(t *testing.T) {
+	sp := corev1.ServicePort{
+		Port:       9090,
+		TargetPort: intstr.FromInt32(10902),
 	}
-	if podName != "thanos-query-abc" {
-		t.Errorf("expected pod thanos-query-abc, got %s", podName)
+	pod := &corev1.Pod{}
+	if got := resolveTargetPort(sp, pod); got != 10902 {
+		t.Errorf("expected 10902, got %d", got)
 	}
 }
 
-func TestFindPodForServiceNoPods(t *testing.T) {
-	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
-		&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "thanos-query",
-				Namespace: "monitoring",
-			},
-			Spec: corev1.ServiceSpec{
-				Selector: map[string]string{"app": "thanos-query"},
-				Ports:    []corev1.ServicePort{tcpPort("http", 9090)},
+func TestResolveTargetPortNamed(t *testing.T) {
+	sp := corev1.ServicePort{
+		Port:       9090,
+		TargetPort: intstr.FromString("http"),
+	}
+	pod := &corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Ports: []corev1.ContainerPort{
+						{Name: "grpc", ContainerPort: 10901},
+						{Name: "http", ContainerPort: 10902},
+					},
+				},
 			},
 		},
-	)
-
-	_, err := FindPodForService(context.Background(), client, "thanos-query", "monitoring")
-	if err == nil {
-		t.Fatal("expected error when no running pods exist")
+	}
+	if got := resolveTargetPort(sp, pod); got != 10902 {
+		t.Errorf("expected 10902, got %d", got)
 	}
 }
 
-func TestFindPodForServiceNoSelector(t *testing.T) {
-	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
-		&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "external-svc",
-				Namespace: "monitoring",
-			},
-			Spec: corev1.ServiceSpec{
-				Ports: []corev1.ServicePort{tcpPort("http", 9090)},
+func TestResolveTargetPortNamedNotFound(t *testing.T) {
+	sp := corev1.ServicePort{
+		Port:       9090,
+		TargetPort: intstr.FromString("unknown"),
+	}
+	pod := &corev1.Pod{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Ports: []corev1.ContainerPort{
+						{Name: "http", ContainerPort: 10902},
+					},
+				},
 			},
 		},
-	)
-
-	_, err := FindPodForService(context.Background(), client, "external-svc", "monitoring")
-	if err == nil {
-		t.Fatal("expected error when service has no selector")
+	}
+	// Falls back to service port
+	if got := resolveTargetPort(sp, pod); got != 9090 {
+		t.Errorf("expected fallback to 9090, got %d", got)
 	}
 }
 
-func TestFindPodForServiceSkipsPending(t *testing.T) {
-	client := fake.NewSimpleClientset( //nolint:staticcheck // NewClientset requires generated apply configs
-		&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "prometheus",
-				Namespace: "monitoring",
-			},
-			Spec: corev1.ServiceSpec{
-				Selector: map[string]string{"app": "prometheus"},
-				Ports:    []corev1.ServicePort{tcpPort("http", 9090)},
-			},
-		},
-		&corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "prometheus-pending",
-				Namespace: "monitoring",
-				Labels:    map[string]string{"app": "prometheus"},
-			},
-			Status: corev1.PodStatus{Phase: corev1.PodPending},
-		},
-		&corev1.Pod{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "prometheus-running",
-				Namespace: "monitoring",
-				Labels:    map[string]string{"app": "prometheus"},
-			},
-			Status: corev1.PodStatus{Phase: corev1.PodRunning},
-		},
-	)
-
-	podName, err := FindPodForService(context.Background(), client, "prometheus", "monitoring")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+func TestResolveTargetPortUnset(t *testing.T) {
+	sp := corev1.ServicePort{
+		Port: 9090,
+		// TargetPort is zero value
 	}
-	if podName != "prometheus-running" {
-		t.Errorf("expected prometheus-running, got %s", podName)
+	pod := &corev1.Pod{}
+	// Defaults to service port
+	if got := resolveTargetPort(sp, pod); got != 9090 {
+		t.Errorf("expected 9090, got %d", got)
 	}
 }

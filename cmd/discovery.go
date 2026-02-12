@@ -53,14 +53,9 @@ func resolveCollector(ctx context.Context) (*metrics.PrometheusCollector, func()
 		if !inCluster {
 			// Running from a laptop — service DNS won't resolve.
 			// Port-forward to a backing pod automatically.
-			podName, err := kube.FindPodForService(ctx, client, result.ServiceName, result.Namespace)
+			session, err := kube.PortForwardToService(ctx, restConfig, client, result.ServiceName, result.Namespace, result.Port)
 			if err != nil {
-				return nil, nil, fmt.Errorf("finding pod for port-forward: %w", err)
-			}
-
-			session, err := kube.StartPortForward(restConfig, client, podName, result.Namespace, result.Port)
-			if err != nil {
-				return nil, nil, fmt.Errorf("starting port-forward: %w", err)
+				return nil, nil, fmt.Errorf("port-forwarding to %s/%s: %w", result.Namespace, result.ServiceName, err)
 			}
 
 			promURL = fmt.Sprintf("http://127.0.0.1:%d", session.LocalPort)
@@ -68,7 +63,7 @@ func resolveCollector(ctx context.Context) (*metrics.PrometheusCollector, func()
 
 			if verbose {
 				fmt.Printf("Port-forwarding %s/%s (pod %s) → %s\n",
-					result.Namespace, result.ServiceName, podName, promURL)
+					result.Namespace, result.ServiceName, session.PodName, promURL)
 			}
 		}
 

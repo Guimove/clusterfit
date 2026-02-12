@@ -1,0 +1,86 @@
+{
+  "collected_at": "2025-01-15T10:00:00Z",
+  "metrics_window": {
+    "Start": "2025-01-08T10:00:00Z",
+    "End": "2025-01-15T10:00:00Z",
+    "Step": 300000000000
+  },
+  "cluster_name": "test-small",
+  "region": "us-east-1",
+  "workloads": [
+    {
+      "name": "web-frontend",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "web-frontend",
+      "effective_cpu_millis": 500,
+      "effective_memory_bytes": 536870912,
+      "requested": {"CPUMillis": 250, "MemoryBytes": 268435456},
+      "replicas": 3
+    },
+    {
+      "name": "api-server",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "api-server",
+      "effective_cpu_millis": 1200,
+      "effective_memory_bytes": 2147483648,
+      "requested": {"CPUMillis": 1000, "MemoryBytes": 2147483648},
+      "replicas": 2
+    },
+    {
+      "name": "worker",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "worker",
+      "effective_cpu_millis": 800,
+      "effective_memory_bytes": 1073741824,
+      "requested": {"CPUMillis": 500, "MemoryBytes": 536870912},
+      "replicas": 4
+    },
+    {
+      "name": "redis",
+      "namespace": "prod",
+      "owner_kind": "StatefulSet",
+      "owner_name": "redis",
+      "effective_cpu_millis": 200,
+      "effective_memory_bytes": 4294967296,
+      "requested": {"CPUMillis": 200, "MemoryBytes": 4294967296},
+      "replicas": 1
+    },
+    {
+      "name": "postgres",
+      "namespace": "prod",
+      "owner_kind": "StatefulSet",
+      "owner_name": "postgres",
+      "effective_cpu_millis": 2000,
+      "effective_memory_bytes": 8589934592,
+      "requested": {"CPUMillis": 2000, "MemoryBytes": 8589934592},
+      "replicas": 1
+    }
+  ],
+  "daemon_sets": [
+    {
+      "name": "fluentbit",
+      "namespace": "logging",
+      "owner_kind": "DaemonSet",
+      "owner_name": "fluentbit",
+      "effective_cpu_millis": 100,
+      "effective_memory_bytes": 134217728,
+      "is_daemon_set": true
+    },
+    {
+      "name": "datadog-agent",
+      "namespace": "monitoring",
+      "owner_kind": "DaemonSet",
+      "owner_name": "datadog-agent",
+      "effective_cpu_millis": 200,
+      "effective_memory_bytes": 268435456,
+      "is_daemon_set": true
+    }
+  ],
+  "system_reserved": {
+    "CPUMillis": 100,
+    "MemoryBytes": 268435456
+  }
+}

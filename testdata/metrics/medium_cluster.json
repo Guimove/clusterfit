@@ -1,0 +1,1354 @@
+{
+  "collected_at": "2025-01-15T10:00:00Z",
+  "metrics_window": {
+    "Start": "2025-01-08T10:00:00Z",
+    "End": "2025-01-15T10:00:00Z",
+    "Step": 300000000000
+  },
+  "cluster_name": "medium-production",
+  "region": "us-west-2",
+  "workloads": [
+    {
+      "name": "api-gateway",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "api-gateway",
+      "effective_cpu_millis": 3428,
+      "effective_memory_bytes": 312475648,
+      "requested": {
+        "CPUMillis": 2673,
+        "MemoryBytes": 186646528
+      },
+      "replicas": 5
+    },
+    {
+      "name": "auth-service",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "auth-service",
+      "effective_cpu_millis": 1413,
+      "effective_memory_bytes": 221249536,
+      "requested": {
+        "CPUMillis": 932,
+        "MemoryBytes": 149946368
+      },
+      "replicas": 3
+    },
+    {
+      "name": "search-indexer",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "search-indexer",
+      "effective_cpu_millis": 3290,
+      "effective_memory_bytes": 879755264,
+      "requested": {
+        "CPUMillis": 2138,
+        "MemoryBytes": 773849088
+      },
+      "replicas": 3
+    },
+    {
+      "name": "recommendation-engine",
+      "namespace": "ml",
+      "owner_kind": "Deployment",
+      "owner_name": "recommendation-engine",
+      "effective_cpu_millis": 2035,
+      "effective_memory_bytes": 4068474880,
+      "requested": {
+        "CPUMillis": 1037,
+        "MemoryBytes": 2644508672
+      },
+      "replicas": 4
+    },
+    {
+      "name": "video-transcoder",
+      "namespace": "media",
+      "owner_kind": "Deployment",
+      "owner_name": "video-transcoder",
+      "effective_cpu_millis": 3124,
+      "effective_memory_bytes": 1916796928,
+      "requested": {
+        "CPUMillis": 1686,
+        "MemoryBytes": 1437597696
+      },
+      "replicas": 2
+    },
+    {
+      "name": "redis-cache",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "redis-cache",
+      "effective_cpu_millis": 261,
+      "effective_memory_bytes": 3097493504,
+      "requested": {
+        "CPUMillis": 232,
+        "MemoryBytes": 2384461824
+      },
+      "replicas": 3
+    },
+    {
+      "name": "postgres",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "postgres",
+      "effective_cpu_millis": 1486,
+      "effective_memory_bytes": 4440719360,
+      "requested": {
+        "CPUMillis": 1411,
+        "MemoryBytes": 2664431616
+      },
+      "replicas": 3
+    },
+    {
+      "name": "elasticsearch",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "elasticsearch",
+      "effective_cpu_millis": 1357,
+      "effective_memory_bytes": 5261754368,
+      "requested": {
+        "CPUMillis": 1044,
+        "MemoryBytes": 3262119936
+      },
+      "replicas": 5
+    },
+    {
+      "name": "kafka-broker",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "kafka-broker",
+      "effective_cpu_millis": 649,
+      "effective_memory_bytes": 5553258496,
+      "requested": {
+        "CPUMillis": 545,
+        "MemoryBytes": 2776629248
+      },
+      "replicas": 5
+    },
+    {
+      "name": "memcached",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "memcached",
+      "effective_cpu_millis": 155,
+      "effective_memory_bytes": 1231028224,
+      "requested": {
+        "CPUMillis": 127,
+        "MemoryBytes": 972029952
+      },
+      "replicas": 1
+    },
+    {
+      "name": "mongo",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "mongo",
+      "effective_cpu_millis": 603,
+      "effective_memory_bytes": 2842689536,
+      "requested": {
+        "CPUMillis": 596,
+        "MemoryBytes": 2301624320
+      },
+      "replicas": 3
+    },
+    {
+      "name": "image-cache",
+      "namespace": "media",
+      "owner_kind": "Deployment",
+      "owner_name": "image-cache",
+      "effective_cpu_millis": 278,
+      "effective_memory_bytes": 8186232832,
+      "requested": {
+        "CPUMillis": 252,
+        "MemoryBytes": 6221201408
+      },
+      "replicas": 2
+    },
+    {
+      "name": "web-frontend",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "web-frontend",
+      "effective_cpu_millis": 457,
+      "effective_memory_bytes": 378535936,
+      "requested": {
+        "CPUMillis": 370,
+        "MemoryBytes": 325058560
+      },
+      "replicas": 5
+    },
+    {
+      "name": "order-service",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "order-service",
+      "effective_cpu_millis": 780,
+      "effective_memory_bytes": 744488960,
+      "requested": {
+        "CPUMillis": 530,
+        "MemoryBytes": 565182464
+      },
+      "replicas": 2
+    },
+    {
+      "name": "payment-service",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "payment-service",
+      "effective_cpu_millis": 375,
+      "effective_memory_bytes": 760217600,
+      "requested": {
+        "CPUMillis": 225,
+        "MemoryBytes": 660602880
+      },
+      "replicas": 3
+    },
+    {
+      "name": "notification-svc",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "notification-svc",
+      "effective_cpu_millis": 342,
+      "effective_memory_bytes": 155189248,
+      "requested": {
+        "CPUMillis": 253,
+        "MemoryBytes": 97517568
+      },
+      "replicas": 4
+    },
+    {
+      "name": "user-service",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "user-service",
+      "effective_cpu_millis": 736,
+      "effective_memory_bytes": 1053818880,
+      "requested": {
+        "CPUMillis": 537,
+        "MemoryBytes": 831520768
+      },
+      "replicas": 4
+    },
+    {
+      "name": "inventory-service",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "inventory-service",
+      "effective_cpu_millis": 597,
+      "effective_memory_bytes": 285212672,
+      "requested": {
+        "CPUMillis": 513,
+        "MemoryBytes": 235929600
+      },
+      "replicas": 3
+    },
+    {
+      "name": "shipping-service",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "shipping-service",
+      "effective_cpu_millis": 256,
+      "effective_memory_bytes": 479199232,
+      "requested": {
+        "CPUMillis": 156,
+        "MemoryBytes": 416284672
+      },
+      "replicas": 2
+    },
+    {
+      "name": "analytics-worker",
+      "namespace": "analytics",
+      "owner_kind": "Deployment",
+      "owner_name": "analytics-worker",
+      "effective_cpu_millis": 1154,
+      "effective_memory_bytes": 678428672,
+      "requested": {
+        "CPUMillis": 980,
+        "MemoryBytes": 583008256
+      },
+      "replicas": 4
+    },
+    {
+      "name": "email-sender",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "email-sender",
+      "effective_cpu_millis": 369,
+      "effective_memory_bytes": 197132288,
+      "requested": {
+        "CPUMillis": 287,
+        "MemoryBytes": 127926272
+      },
+      "replicas": 3
+    },
+    {
+      "name": "scheduler",
+      "namespace": "infra",
+      "owner_kind": "Deployment",
+      "owner_name": "scheduler",
+      "effective_cpu_millis": 334,
+      "effective_memory_bytes": 385875968,
+      "requested": {
+        "CPUMillis": 257,
+        "MemoryBytes": 230686720
+      },
+      "replicas": 2
+    },
+    {
+      "name": "etl-pipeline",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "etl-pipeline",
+      "effective_cpu_millis": 1401,
+      "effective_memory_bytes": 3881828352,
+      "requested": {
+        "CPUMillis": 1246,
+        "MemoryBytes": 3454009344
+      },
+      "replicas": 1
+    },
+    {
+      "name": "report-generator",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "report-generator",
+      "effective_cpu_millis": 1316,
+      "effective_memory_bytes": 1872756736,
+      "requested": {
+        "CPUMillis": 960,
+        "MemoryBytes": 1516240896
+      },
+      "replicas": 1
+    },
+    {
+      "name": "data-migration",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "data-migration",
+      "effective_cpu_millis": 717,
+      "effective_memory_bytes": 1853882368,
+      "requested": {
+        "CPUMillis": 501,
+        "MemoryBytes": 1074790400
+      },
+      "replicas": 1
+    },
+    {
+      "name": "ml-training",
+      "namespace": "ml",
+      "owner_kind": "Job",
+      "owner_name": "ml-training",
+      "effective_cpu_millis": 3155,
+      "effective_memory_bytes": 7766802432,
+      "requested": {
+        "CPUMillis": 2650,
+        "MemoryBytes": 4892655616
+      },
+      "replicas": 1
+    },
+    {
+      "name": "backup-job",
+      "namespace": "infra",
+      "owner_kind": "Job",
+      "owner_name": "backup-job",
+      "effective_cpu_millis": 327,
+      "effective_memory_bytes": 359661568,
+      "requested": {
+        "CPUMillis": 241,
+        "MemoryBytes": 254803968
+      },
+      "replicas": 1
+    },
+    {
+      "name": "log-archiver",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "log-archiver",
+      "effective_cpu_millis": 351,
+      "effective_memory_bytes": 624951296,
+      "requested": {
+        "CPUMillis": 287,
+        "MemoryBytes": 330301440
+      },
+      "replicas": 1
+    },
+    {
+      "name": "api-gateway-1",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "api-gateway-1",
+      "effective_cpu_millis": 3015,
+      "effective_memory_bytes": 636485632,
+      "requested": {
+        "CPUMillis": 2683,
+        "MemoryBytes": 527433728
+      },
+      "replicas": 3
+    },
+    {
+      "name": "auth-service-1",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "auth-service-1",
+      "effective_cpu_millis": 1338,
+      "effective_memory_bytes": 307232768,
+      "requested": {
+        "CPUMillis": 842,
+        "MemoryBytes": 220200960
+      },
+      "replicas": 2
+    },
+    {
+      "name": "search-indexer-1",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "search-indexer-1",
+      "effective_cpu_millis": 2395,
+      "effective_memory_bytes": 1069547520,
+      "requested": {
+        "CPUMillis": 1269,
+        "MemoryBytes": 716177408
+      },
+      "replicas": 2
+    },
+    {
+      "name": "recommendation-engine-1",
+      "namespace": "ml",
+      "owner_kind": "Deployment",
+      "owner_name": "recommendation-engine-1",
+      "effective_cpu_millis": 3402,
+      "effective_memory_bytes": 3120562176,
+      "requested": {
+        "CPUMillis": 1871,
+        "MemoryBytes": 2589982720
+      },
+      "replicas": 4
+    },
+    {
+      "name": "video-transcoder-1",
+      "namespace": "media",
+      "owner_kind": "Deployment",
+      "owner_name": "video-transcoder-1",
+      "effective_cpu_millis": 3248,
+      "effective_memory_bytes": 1147142144,
+      "requested": {
+        "CPUMillis": 2663,
+        "MemoryBytes": 917504000
+      },
+      "replicas": 1
+    },
+    {
+      "name": "redis-cache-1",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "redis-cache-1",
+      "effective_cpu_millis": 343,
+      "effective_memory_bytes": 2915041280,
+      "requested": {
+        "CPUMillis": 305,
+        "MemoryBytes": 2594177024
+      },
+      "replicas": 1
+    },
+    {
+      "name": "postgres-1",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "postgres-1",
+      "effective_cpu_millis": 1965,
+      "effective_memory_bytes": 4894752768,
+      "requested": {
+        "CPUMillis": 1827,
+        "MemoryBytes": 3866099712
+      },
+      "replicas": 2
+    },
+    {
+      "name": "elasticsearch-1",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "elasticsearch-1",
+      "effective_cpu_millis": 1469,
+      "effective_memory_bytes": 4390387712,
+      "requested": {
+        "CPUMillis": 1439,
+        "MemoryBytes": 3774873600
+      },
+      "replicas": 3
+    },
+    {
+      "name": "kafka-broker-1",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "kafka-broker-1",
+      "effective_cpu_millis": 750,
+      "effective_memory_bytes": 2594177024,
+      "requested": {
+        "CPUMillis": 570,
+        "MemoryBytes": 1297088512
+      },
+      "replicas": 5
+    },
+    {
+      "name": "memcached-1",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "memcached-1",
+      "effective_cpu_millis": 245,
+      "effective_memory_bytes": 1312817152,
+      "requested": {
+        "CPUMillis": 178,
+        "MemoryBytes": 997195776
+      },
+      "replicas": 3
+    },
+    {
+      "name": "mongo-1",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "mongo-1",
+      "effective_cpu_millis": 1434,
+      "effective_memory_bytes": 2565865472,
+      "requested": {
+        "CPUMillis": 1147,
+        "MemoryBytes": 1590689792
+      },
+      "replicas": 2
+    },
+    {
+      "name": "image-cache-1",
+      "namespace": "media",
+      "owner_kind": "Deployment",
+      "owner_name": "image-cache-1",
+      "effective_cpu_millis": 434,
+      "effective_memory_bytes": 4987027456,
+      "requested": {
+        "CPUMillis": 308,
+        "MemoryBytes": 3290431488
+      },
+      "replicas": 2
+    },
+    {
+      "name": "web-frontend-1",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "web-frontend-1",
+      "effective_cpu_millis": 672,
+      "effective_memory_bytes": 673185792,
+      "requested": {
+        "CPUMillis": 510,
+        "MemoryBytes": 578813952
+      },
+      "replicas": 3
+    },
+    {
+      "name": "order-service-1",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "order-service-1",
+      "effective_cpu_millis": 387,
+      "effective_memory_bytes": 978321408,
+      "requested": {
+        "CPUMillis": 270,
+        "MemoryBytes": 772800512
+      },
+      "replicas": 2
+    },
+    {
+      "name": "payment-service-1",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "payment-service-1",
+      "effective_cpu_millis": 588,
+      "effective_memory_bytes": 985661440,
+      "requested": {
+        "CPUMillis": 452,
+        "MemoryBytes": 797966336
+      },
+      "replicas": 4
+    },
+    {
+      "name": "notification-svc-1",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "notification-svc-1",
+      "effective_cpu_millis": 344,
+      "effective_memory_bytes": 214958080,
+      "requested": {
+        "CPUMillis": 264,
+        "MemoryBytes": 128974848
+      },
+      "replicas": 2
+    },
+    {
+      "name": "user-service-1",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "user-service-1",
+      "effective_cpu_millis": 416,
+      "effective_memory_bytes": 950009856,
+      "requested": {
+        "CPUMillis": 299,
+        "MemoryBytes": 835715072
+      },
+      "replicas": 3
+    },
+    {
+      "name": "inventory-service-1",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "inventory-service-1",
+      "effective_cpu_millis": 268,
+      "effective_memory_bytes": 588251136,
+      "requested": {
+        "CPUMillis": 233,
+        "MemoryBytes": 381681664
+      },
+      "replicas": 3
+    },
+    {
+      "name": "shipping-service-1",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "shipping-service-1",
+      "effective_cpu_millis": 548,
+      "effective_memory_bytes": 373293056,
+      "requested": {
+        "CPUMillis": 394,
+        "MemoryBytes": 320864256
+      },
+      "replicas": 3
+    },
+    {
+      "name": "analytics-worker-1",
+      "namespace": "analytics",
+      "owner_kind": "Deployment",
+      "owner_name": "analytics-worker-1",
+      "effective_cpu_millis": 927,
+      "effective_memory_bytes": 1800404992,
+      "requested": {
+        "CPUMillis": 584,
+        "MemoryBytes": 1080033280
+      },
+      "replicas": 5
+    },
+    {
+      "name": "email-sender-1",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "email-sender-1",
+      "effective_cpu_millis": 234,
+      "effective_memory_bytes": 380633088,
+      "requested": {
+        "CPUMillis": 173,
+        "MemoryBytes": 254803968
+      },
+      "replicas": 3
+    },
+    {
+      "name": "scheduler-1",
+      "namespace": "infra",
+      "owner_kind": "Deployment",
+      "owner_name": "scheduler-1",
+      "effective_cpu_millis": 424,
+      "effective_memory_bytes": 1006632960,
+      "requested": {
+        "CPUMillis": 267,
+        "MemoryBytes": 694157312
+      },
+      "replicas": 1
+    },
+    {
+      "name": "etl-pipeline-1",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "etl-pipeline-1",
+      "effective_cpu_millis": 2856,
+      "effective_memory_bytes": 1107296256,
+      "requested": {
+        "CPUMillis": 2284,
+        "MemoryBytes": 752877568
+      },
+      "replicas": 2
+    },
+    {
+      "name": "report-generator-1",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "report-generator-1",
+      "effective_cpu_millis": 1769,
+      "effective_memory_bytes": 1612709888,
+      "requested": {
+        "CPUMillis": 1149,
+        "MemoryBytes": 966787072
+      },
+      "replicas": 2
+    },
+    {
+      "name": "data-migration-1",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "data-migration-1",
+      "effective_cpu_millis": 1062,
+      "effective_memory_bytes": 1387266048,
+      "requested": {
+        "CPUMillis": 1008,
+        "MemoryBytes": 998244352
+      },
+      "replicas": 1
+    },
+    {
+      "name": "ml-training-1",
+      "namespace": "ml",
+      "owner_kind": "Job",
+      "owner_name": "ml-training-1",
+      "effective_cpu_millis": 2724,
+      "effective_memory_bytes": 2168455168,
+      "requested": {
+        "CPUMillis": 2369,
+        "MemoryBytes": 1647312896
+      },
+      "replicas": 1
+    },
+    {
+      "name": "backup-job-1",
+      "namespace": "infra",
+      "owner_kind": "Job",
+      "owner_name": "backup-job-1",
+      "effective_cpu_millis": 296,
+      "effective_memory_bytes": 957349888,
+      "requested": {
+        "CPUMillis": 230,
+        "MemoryBytes": 670040064
+      },
+      "replicas": 1
+    },
+    {
+      "name": "log-archiver-1",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "log-archiver-1",
+      "effective_cpu_millis": 200,
+      "effective_memory_bytes": 1893728256,
+      "requested": {
+        "CPUMillis": 152,
+        "MemoryBytes": 1382023168
+      },
+      "replicas": 1
+    },
+    {
+      "name": "api-gateway-2",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "api-gateway-2",
+      "effective_cpu_millis": 2323,
+      "effective_memory_bytes": 567279616,
+      "requested": {
+        "CPUMillis": 1649,
+        "MemoryBytes": 407896064
+      },
+      "replicas": 3
+    },
+    {
+      "name": "auth-service-2",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "auth-service-2",
+      "effective_cpu_millis": 1730,
+      "effective_memory_bytes": 148897792,
+      "requested": {
+        "CPUMillis": 1020,
+        "MemoryBytes": 115343360
+      },
+      "replicas": 3
+    },
+    {
+      "name": "search-indexer-2",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "search-indexer-2",
+      "effective_cpu_millis": 3885,
+      "effective_memory_bytes": 976224256,
+      "requested": {
+        "CPUMillis": 2719,
+        "MemoryBytes": 643825664
+      },
+      "replicas": 2
+    },
+    {
+      "name": "recommendation-engine-2",
+      "namespace": "ml",
+      "owner_kind": "Deployment",
+      "owner_name": "recommendation-engine-2",
+      "effective_cpu_millis": 3440,
+      "effective_memory_bytes": 3283091456,
+      "requested": {
+        "CPUMillis": 2476,
+        "MemoryBytes": 2428502016
+      },
+      "replicas": 2
+    },
+    {
+      "name": "video-transcoder-2",
+      "namespace": "media",
+      "owner_kind": "Deployment",
+      "owner_name": "video-transcoder-2",
+      "effective_cpu_millis": 3615,
+      "effective_memory_bytes": 1782579200,
+      "requested": {
+        "CPUMillis": 2313,
+        "MemoryBytes": 1550843904
+      },
+      "replicas": 1
+    },
+    {
+      "name": "redis-cache-2",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "redis-cache-2",
+      "effective_cpu_millis": 456,
+      "effective_memory_bytes": 6888095744,
+      "requested": {
+        "CPUMillis": 319,
+        "MemoryBytes": 5441060864
+      },
+      "replicas": 2
+    },
+    {
+      "name": "postgres-2",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "postgres-2",
+      "effective_cpu_millis": 1587,
+      "effective_memory_bytes": 6856638464,
+      "requested": {
+        "CPUMillis": 1364,
+        "MemoryBytes": 3770679296
+      },
+      "replicas": 2
+    },
+    {
+      "name": "elasticsearch-2",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "elasticsearch-2",
+      "effective_cpu_millis": 1431,
+      "effective_memory_bytes": 7688159232,
+      "requested": {
+        "CPUMillis": 1259,
+        "MemoryBytes": 3920625664
+      },
+      "replicas": 4
+    },
+    {
+      "name": "kafka-broker-2",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "kafka-broker-2",
+      "effective_cpu_millis": 872,
+      "effective_memory_bytes": 4076863488,
+      "requested": {
+        "CPUMillis": 828,
+        "MemoryBytes": 3587178496
+      },
+      "replicas": 3
+    },
+    {
+      "name": "memcached-2",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "memcached-2",
+      "effective_cpu_millis": 272,
+      "effective_memory_bytes": 2196766720,
+      "requested": {
+        "CPUMillis": 212,
+        "MemoryBytes": 1888485376
+      },
+      "replicas": 1
+    },
+    {
+      "name": "mongo-2",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "mongo-2",
+      "effective_cpu_millis": 510,
+      "effective_memory_bytes": 8433696768,
+      "requested": {
+        "CPUMillis": 443,
+        "MemoryBytes": 7168065536
+      },
+      "replicas": 2
+    },
+    {
+      "name": "image-cache-2",
+      "namespace": "media",
+      "owner_kind": "Deployment",
+      "owner_name": "image-cache-2",
+      "effective_cpu_millis": 437,
+      "effective_memory_bytes": 5772410880,
+      "requested": {
+        "CPUMillis": 371,
+        "MemoryBytes": 4906287104
+      },
+      "replicas": 2
+    },
+    {
+      "name": "web-frontend-2",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "web-frontend-2",
+      "effective_cpu_millis": 552,
+      "effective_memory_bytes": 674234368,
+      "requested": {
+        "CPUMillis": 441,
+        "MemoryBytes": 478150656
+      },
+      "replicas": 2
+    },
+    {
+      "name": "order-service-2",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "order-service-2",
+      "effective_cpu_millis": 578,
+      "effective_memory_bytes": 570425344,
+      "requested": {
+        "CPUMillis": 381,
+        "MemoryBytes": 364904448
+      },
+      "replicas": 5
+    },
+    {
+      "name": "payment-service-2",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "payment-service-2",
+      "effective_cpu_millis": 591,
+      "effective_memory_bytes": 744488960,
+      "requested": {
+        "CPUMillis": 466,
+        "MemoryBytes": 587202560
+      },
+      "replicas": 3
+    },
+    {
+      "name": "notification-svc-2",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "notification-svc-2",
+      "effective_cpu_millis": 446,
+      "effective_memory_bytes": 206569472,
+      "requested": {
+        "CPUMillis": 347,
+        "MemoryBytes": 168820736
+      },
+      "replicas": 2
+    },
+    {
+      "name": "user-service-2",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "user-service-2",
+      "effective_cpu_millis": 357,
+      "effective_memory_bytes": 780140544,
+      "requested": {
+        "CPUMillis": 317,
+        "MemoryBytes": 499122176
+      },
+      "replicas": 5
+    },
+    {
+      "name": "inventory-service-2",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "inventory-service-2",
+      "effective_cpu_millis": 492,
+      "effective_memory_bytes": 1028653056,
+      "requested": {
+        "CPUMillis": 319,
+        "MemoryBytes": 667942912
+      },
+      "replicas": 4
+    },
+    {
+      "name": "shipping-service-2",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "shipping-service-2",
+      "effective_cpu_millis": 287,
+      "effective_memory_bytes": 324009984,
+      "requested": {
+        "CPUMillis": 180,
+        "MemoryBytes": 258998272
+      },
+      "replicas": 3
+    },
+    {
+      "name": "analytics-worker-2",
+      "namespace": "analytics",
+      "owner_kind": "Deployment",
+      "owner_name": "analytics-worker-2",
+      "effective_cpu_millis": 1088,
+      "effective_memory_bytes": 881852416,
+      "requested": {
+        "CPUMillis": 848,
+        "MemoryBytes": 775946240
+      },
+      "replicas": 3
+    },
+    {
+      "name": "email-sender-2",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "email-sender-2",
+      "effective_cpu_millis": 354,
+      "effective_memory_bytes": 212860928,
+      "requested": {
+        "CPUMillis": 215,
+        "MemoryBytes": 161480704
+      },
+      "replicas": 2
+    },
+    {
+      "name": "scheduler-2",
+      "namespace": "infra",
+      "owner_kind": "Deployment",
+      "owner_name": "scheduler-2",
+      "effective_cpu_millis": 281,
+      "effective_memory_bytes": 679477248,
+      "requested": {
+        "CPUMillis": 233,
+        "MemoryBytes": 515899392
+      },
+      "replicas": 2
+    },
+    {
+      "name": "etl-pipeline-2",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "etl-pipeline-2",
+      "effective_cpu_millis": 2903,
+      "effective_memory_bytes": 1280311296,
+      "requested": {
+        "CPUMillis": 2583,
+        "MemoryBytes": 946864128
+      },
+      "replicas": 2
+    },
+    {
+      "name": "report-generator-2",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "report-generator-2",
+      "effective_cpu_millis": 1617,
+      "effective_memory_bytes": 1635778560,
+      "requested": {
+        "CPUMillis": 1099,
+        "MemoryBytes": 1046478848
+      },
+      "replicas": 1
+    },
+    {
+      "name": "data-migration-2",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "data-migration-2",
+      "effective_cpu_millis": 1158,
+      "effective_memory_bytes": 3588227072,
+      "requested": {
+        "CPUMillis": 914,
+        "MemoryBytes": 2942304256
+      },
+      "replicas": 1
+    },
+    {
+      "name": "ml-training-2",
+      "namespace": "ml",
+      "owner_kind": "Job",
+      "owner_name": "ml-training-2",
+      "effective_cpu_millis": 2980,
+      "effective_memory_bytes": 4108320768,
+      "requested": {
+        "CPUMillis": 2324,
+        "MemoryBytes": 2956984320
+      },
+      "replicas": 1
+    },
+    {
+      "name": "backup-job-2",
+      "namespace": "infra",
+      "owner_kind": "Job",
+      "owner_name": "backup-job-2",
+      "effective_cpu_millis": 306,
+      "effective_memory_bytes": 740294656,
+      "requested": {
+        "CPUMillis": 195,
+        "MemoryBytes": 517996544
+      },
+      "replicas": 1
+    },
+    {
+      "name": "log-archiver-2",
+      "namespace": "batch",
+      "owner_kind": "Job",
+      "owner_name": "log-archiver-2",
+      "effective_cpu_millis": 376,
+      "effective_memory_bytes": 585105408,
+      "requested": {
+        "CPUMillis": 270,
+        "MemoryBytes": 420478976
+      },
+      "replicas": 1
+    },
+    {
+      "name": "api-gateway-3",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "api-gateway-3",
+      "effective_cpu_millis": 2940,
+      "effective_memory_bytes": 483393536,
+      "requested": {
+        "CPUMillis": 2205,
+        "MemoryBytes": 294649856
+      },
+      "replicas": 3
+    },
+    {
+      "name": "auth-service-3",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "auth-service-3",
+      "effective_cpu_millis": 502,
+      "effective_memory_bytes": 402653184,
+      "requested": {
+        "CPUMillis": 351,
+        "MemoryBytes": 341835776
+      },
+      "replicas": 4
+    },
+    {
+      "name": "search-indexer-3",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "search-indexer-3",
+      "effective_cpu_millis": 3806,
+      "effective_memory_bytes": 1305477120,
+      "requested": {
+        "CPUMillis": 2816,
+        "MemoryBytes": 1161822208
+      },
+      "replicas": 2
+    },
+    {
+      "name": "recommendation-engine-3",
+      "namespace": "ml",
+      "owner_kind": "Deployment",
+      "owner_name": "recommendation-engine-3",
+      "effective_cpu_millis": 2795,
+      "effective_memory_bytes": 2879389696,
+      "requested": {
+        "CPUMillis": 1732,
+        "MemoryBytes": 2389704704
+      },
+      "replicas": 3
+    },
+    {
+      "name": "video-transcoder-3",
+      "namespace": "media",
+      "owner_kind": "Deployment",
+      "owner_name": "video-transcoder-3",
+      "effective_cpu_millis": 3016,
+      "effective_memory_bytes": 2037383168,
+      "requested": {
+        "CPUMillis": 1719,
+        "MemoryBytes": 1731198976
+      },
+      "replicas": 3
+    },
+    {
+      "name": "redis-cache-3",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "redis-cache-3",
+      "effective_cpu_millis": 246,
+      "effective_memory_bytes": 7324303360,
+      "requested": {
+        "CPUMillis": 231,
+        "MemoryBytes": 4613734400
+      },
+      "replicas": 2
+    },
+    {
+      "name": "postgres-3",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "postgres-3",
+      "effective_cpu_millis": 576,
+      "effective_memory_bytes": 5706350592,
+      "requested": {
+        "CPUMillis": 501,
+        "MemoryBytes": 4849664000
+      },
+      "replicas": 1
+    },
+    {
+      "name": "elasticsearch-3",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "elasticsearch-3",
+      "effective_cpu_millis": 1323,
+      "effective_memory_bytes": 4833935360,
+      "requested": {
+        "CPUMillis": 1137,
+        "MemoryBytes": 2416967680
+      },
+      "replicas": 4
+    },
+    {
+      "name": "kafka-broker-3",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "kafka-broker-3",
+      "effective_cpu_millis": 1387,
+      "effective_memory_bytes": 3153068032,
+      "requested": {
+        "CPUMillis": 1276,
+        "MemoryBytes": 2048917504
+      },
+      "replicas": 4
+    },
+    {
+      "name": "memcached-3",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "memcached-3",
+      "effective_cpu_millis": 205,
+      "effective_memory_bytes": 4141875200,
+      "requested": {
+        "CPUMillis": 153,
+        "MemoryBytes": 3685744640
+      },
+      "replicas": 3
+    },
+    {
+      "name": "mongo-3",
+      "namespace": "data",
+      "owner_kind": "StatefulSet",
+      "owner_name": "mongo-3",
+      "effective_cpu_millis": 1435,
+      "effective_memory_bytes": 4395630592,
+      "requested": {
+        "CPUMillis": 1076,
+        "MemoryBytes": 3427794944
+      },
+      "replicas": 3
+    },
+    {
+      "name": "image-cache-3",
+      "namespace": "media",
+      "owner_kind": "Deployment",
+      "owner_name": "image-cache-3",
+      "effective_cpu_millis": 260,
+      "effective_memory_bytes": 7881097216,
+      "requested": {
+        "CPUMillis": 239,
+        "MemoryBytes": 5437915136
+      },
+      "replicas": 1
+    },
+    {
+      "name": "web-frontend-3",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "web-frontend-3",
+      "effective_cpu_millis": 392,
+      "effective_memory_bytes": 776994816,
+      "requested": {
+        "CPUMillis": 348,
+        "MemoryBytes": 597688320
+      },
+      "replicas": 7
+    },
+    {
+      "name": "order-service-3",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "order-service-3",
+      "effective_cpu_millis": 731,
+      "effective_memory_bytes": 405798912,
+      "requested": {
+        "CPUMillis": 643,
+        "MemoryBytes": 319815680
+      },
+      "replicas": 4
+    },
+    {
+      "name": "payment-service-3",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "payment-service-3",
+      "effective_cpu_millis": 492,
+      "effective_memory_bytes": 952107008,
+      "requested": {
+        "CPUMillis": 383,
+        "MemoryBytes": 742391808
+      },
+      "replicas": 4
+    },
+    {
+      "name": "notification-svc-3",
+      "namespace": "prod",
+      "owner_kind": "Deployment",
+      "owner_name": "notification-svc-3",
+      "effective_cpu_millis": 488,
+      "effective_memory_bytes": 420478976,
+      "requested": {
+        "CPUMillis": 424,
+        "MemoryBytes": 301989888
+      },
+      "replicas": 3
+    }
+  ],
+  "daemon_sets": [
+    {
+      "name": "fluentbit",
+      "namespace": "logging",
+      "owner_kind": "DaemonSet",
+      "owner_name": "fluentbit",
+      "effective_cpu_millis": 100,
+      "effective_memory_bytes": 134217728,
+      "is_daemon_set": true
+    },
+    {
+      "name": "datadog-agent",
+      "namespace": "monitoring",
+      "owner_kind": "DaemonSet",
+      "owner_name": "datadog-agent",
+      "effective_cpu_millis": 200,
+      "effective_memory_bytes": 268435456,
+      "is_daemon_set": true
+    },
+    {
+      "name": "kube-proxy",
+      "namespace": "kube-system",
+      "owner_kind": "DaemonSet",
+      "owner_name": "kube-proxy",
+      "effective_cpu_millis": 100,
+      "effective_memory_bytes": 134217728,
+      "is_daemon_set": true
+    },
+    {
+      "name": "aws-node",
+      "namespace": "kube-system",
+      "owner_kind": "DaemonSet",
+      "owner_name": "aws-node",
+      "effective_cpu_millis": 50,
+      "effective_memory_bytes": 67108864,
+      "is_daemon_set": true
+    }
+  ],
+  "system_reserved": {
+    "CPUMillis": 100,
+    "MemoryBytes": 268435456
+  }
+}

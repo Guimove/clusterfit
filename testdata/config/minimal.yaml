@@ -1,0 +1,6 @@
+cluster:
+  name: "my-cluster"
+  region: "us-east-1"
+
+prometheus:
+  url: "http://prometheus.monitoring.svc:9090"

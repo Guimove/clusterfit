@@ -1,0 +1,68 @@
+# ClusterFit configuration file
+# Copy to clusterfit.yaml and customize for your environment.
+
+cluster:
+  name: "my-eks-cluster"
+  region: "us-east-1"            # Auto-detected from AWS_REGION if omitted
+
+prometheus:
+  url: "http://prometheus.monitoring.svc:9090"
+  # url: "http://thanos-query.monitoring.svc:9090"  # For Thanos
+  timeout: 60s
+
+# Kubernetes auto-discovery (alternative to prometheus.url)
+# When enabled, ClusterFit discovers Prometheus/Thanos/Cortex/VictoriaMetrics
+# services automatically by well-known labels. Use --discover or set enabled: true.
+kubernetes:
+  enabled: false
+  # kubeconfig: ""                 # Path to kubeconfig (default: ~/.kube/config)
+  # context: ""                    # Kubernetes context (default: current-context)
+  # discovery_namespace: ""        # Limit discovery to a namespace (default: all)
+
+metrics:
+  window: 168h                   # 7 days lookback
+  step: 5m                       # PromQL step interval
+  percentile: 0.95               # p95 for effective sizing
+  exclude_namespaces:
+    - kube-system
+    - kube-node-lease
+    - karpenter
+
+instances:
+  families:                      # EC2 instance families to evaluate
+    - m5
+    - m6i
+    - m7i
+    - c5
+    - c6i
+    - r5
+    - r6i
+    # - m7g                      # Uncomment for Graviton evaluation
+    # - c7g
+  architectures:
+    - amd64
+    # - arm64                    # Uncomment for Graviton
+  exclude_burstable: true        # Exclude t-family
+  exclude_bare_metal: true
+  current_generation_only: true
+  min_vcpus: 2
+  max_vcpus: 96
+
+simulation:
+  strategy: "both"               # homogeneous, mixed, or both
+  spot_ratio: 0.0                # 0.0 = all on-demand, 0.7 = 70% spot
+  system_reserved:
+    cpu_millis: 100
+    memory_mib: 256
+  max_nodes: 500
+
+scoring:
+  weights:
+    cost: 0.40
+    utilization: 0.30
+    fragmentation: 0.15
+    resilience: 0.15
+
+output:
+  format: table                  # table, json, markdown
+  top_n: 5

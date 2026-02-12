@@ -1,0 +1,54 @@
+cluster:
+  name: "production-cluster"
+  region: "us-west-2"
+
+prometheus:
+  url: "http://thanos-query.monitoring.svc:9090"
+  timeout: 120s
+
+metrics:
+  window: 336h  # 14 days
+  step: 5m
+  percentile: 0.95
+  exclude_namespaces:
+    - kube-system
+    - kube-node-lease
+    - karpenter
+    - cert-manager
+
+instances:
+  families:
+    - m6i
+    - m7i
+    - c6i
+    - c7i
+    - r6i
+    - m7g
+    - c7g
+  architectures:
+    - amd64
+    - arm64
+  exclude_burstable: true
+  exclude_bare_metal: true
+  current_generation_only: true
+  min_vcpus: 2
+  max_vcpus: 48
+
+simulation:
+  strategy: "both"
+  spot_ratio: 0.3
+  system_reserved:
+    cpu_millis: 100
+    memory_mib: 256
+  max_nodes: 200
+
+scoring:
+  weights:
+    cost: 0.40
+    utilization: 0.30
+    fragmentation: 0.15
+    resilience: 0.15
+
+output:
+  format: table
+  top_n: 10

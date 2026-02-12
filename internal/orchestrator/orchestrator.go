@@ -105,6 +105,7 @@ func (o *Orchestrator) Recommend(ctx context.Context) ([]model.Recommendation, e
 
 	packer := &simulation.BestFitDecreasing{}
 	scorer := simulation.NewScorer(weights)
+	scorer.DaemonSetCount = len(state.DaemonSets)
 	engine := simulation.NewEngine(packer, scorer)
 
 	recs, err := engine.RunAll(ctx, scenarios, *state)

@@ -83,15 +83,6 @@ func NewAWSProvider(ctx context.Context, region string, cacheDir string) (*AWSPr
 	}, nil
 }
 
-// newAWSProviderForTest creates a provider with injected mock clients.
-func newAWSProviderForTest(ec2Client ec2API, pricingClient pricingAPI, region string) *AWSProvider {
-	return &AWSProvider{
-		ec2Client:     ec2Client,
-		pricingClient: pricingClient,
-		region:        region,
-	}
-}
-
 // Region returns the AWS region.
 func (p *AWSProvider) Region() string {
 	return p.region

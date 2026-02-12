@@ -104,7 +104,7 @@ func runRecommend(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("creating output file: %w", err)
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		w = f
 	}
 

@@ -10,22 +10,6 @@ import (
 	"github.com/guimove/clusterfit/internal/model"
 )
 
-// mockProvider implements aws.PricingProvider for testing.
-type mockProvider struct {
-	templates []model.NodeTemplate
-	region    string
-}
-
-func (m *mockProvider) GetInstanceTypes(ctx context.Context, filter interface{}) ([]model.NodeTemplate, error) {
-	return m.templates, nil
-}
-
-func (m *mockProvider) GetSpotPrices(ctx context.Context, instanceTypes []string) (map[string]float64, error) {
-	return nil, nil
-}
-
-func (m *mockProvider) Region() string { return m.region }
-
 func TestOrchestrator_Simulate(t *testing.T) {
 	state := &model.ClusterState{
 		Workloads: []model.WorkloadProfile{

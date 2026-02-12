@@ -80,7 +80,7 @@ func (c *PrometheusCollector) detectBackend(ctx context.Context) {
 	// Check buildinfo for Thanos/Cortex
 	resp, err := http.Get(c.endpoint + "/api/v1/status/buildinfo")
 	if err == nil {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	// Try Thanos-specific metric
@@ -103,11 +103,6 @@ func (c *PrometheusCollector) Collect(ctx context.Context, opts CollectOptions) 
 	stepStr := formatDuration(opts.StepInterval)
 	if stepStr == "" {
 		stepStr = "5m"
-	}
-
-	pct := opts.Percentile
-	if pct == 0 {
-		pct = 0.95
 	}
 
 	// Collect all metrics in parallel

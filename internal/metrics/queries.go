@@ -23,18 +23,6 @@ func queryCPUPercentile(percentile float64, window, step string) string {
 )`, percentile, window, step)
 }
 
-// queryCPURateInstant returns PromQL for current CPU usage rate per pod.
-// Used as fallback when quantile_over_time is unavailable.
-func queryCPURateInstant() string {
-	return `sum by (namespace, pod) (
-  rate(container_cpu_usage_seconds_total{
-    container!="",
-    container!="POD",
-    image!=""
-  }[5m])
-)`
-}
-
 // queryMemoryPercentile returns PromQL for memory usage at a given percentile.
 // Returns memory in bytes per (namespace, pod).
 func queryMemoryPercentile(percentile float64, window, step string) string {
@@ -47,17 +35,6 @@ func queryMemoryPercentile(percentile float64, window, step string) string {
     }
   )[%s:%s]
 )`, percentile, window, step)
-}
-
-// queryMemoryInstant returns PromQL for current memory usage per pod.
-func queryMemoryInstant() string {
-	return `sum by (namespace, pod) (
-  container_memory_working_set_bytes{
-    container!="",
-    container!="POD",
-    image!=""
-  }
-)`
 }
 
 // queryPodResourceRequests returns PromQL for pod resource requests.

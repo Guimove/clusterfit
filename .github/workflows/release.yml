@@ -45,7 +45,7 @@ jobs:
             -o clusterfit-${GOOS}-${GOARCH} .
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: clusterfit-${{ matrix.goos }}-${{ matrix.goarch }}
           path: clusterfit-${{ matrix.goos }}-${{ matrix.goarch }}
